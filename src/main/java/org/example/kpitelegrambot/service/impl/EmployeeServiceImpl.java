@@ -25,7 +25,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public Employee getEmployeeByChatId(long id) {
-        return employeeRepository.findById(id).orElse(new Employee(null,null,null, EmployeeStatus.UNKNOWN_USER, EmployeePost.UNKNOWN, DayNight.DAY));
+        return employeeRepository.findById(id).orElse(new Employee(null,null,null, EmployeeStatus.UNKNOWN_USER, EmployeePost.UNKNOWN, DayNight.UNKNOWN));
     }
 
     @Override

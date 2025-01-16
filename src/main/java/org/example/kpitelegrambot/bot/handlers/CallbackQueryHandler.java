@@ -30,9 +30,9 @@ public class CallbackQueryHandler implements Handler {
         currentEmployee = employeeService.getEmployeeByChatId(chatId);
 
         sendMessage.setChatId(chatId);
-        sendMessage.setText("Я не знаю такой команды \uD83E\uDD37");
+        sendMessage.setText("Я не знаю такой команды B \uD83E\uDD37");
 
-        if(currentEmployee.getStatus().equals(EmployeeStatus.WAITING_JOB)){
+        if (currentEmployee.getStatus().equals(EmployeeStatus.WAITING_JOB)) {
             if (callback.equals(ButtonLabels.I_AM_PACKER.getCallback())) {
                 return addNewPacker(sendMessage, currentEmployee);
             }
@@ -40,26 +40,37 @@ public class CallbackQueryHandler implements Handler {
                 return fillWorkTimeProcess(sendMessage, currentEmployee);
             }
         }
-        if(currentEmployee.getStatus().equals(EmployeeStatus.WAITING_WORKTIME)){
-            if(callback.equals(DayNight.DAY.getCallback())) {
+        if (currentEmployee.getStatus().equals(EmployeeStatus.WAITING_WORKTIME)) {
+            if (callback.equals(DayNight.DAY.getCallback())) {
                 return addNewPrinter(sendMessage, currentEmployee, DayNight.DAY);
             }
-            if(callback.equals(DayNight.NIGHT.getCallback())) {
+            if (callback.equals(DayNight.NIGHT.getCallback())) {
                 return addNewPrinter(sendMessage, currentEmployee, DayNight.NIGHT);
             }
         }
-        if(currentEmployee.getStatus().equals(EmployeeStatus.WAITING_DATE)){
+        if (currentEmployee.getStatus().equals(EmployeeStatus.WAITING_DATE)) {
             if (callback.matches("^\\d{2}-\\d{2}-\\d{4}$")) {
                 return fillDateProcess(callback, currentEmployee, sendMessage);
+            }
+        }
+        if (currentEmployee.getStatus().equals(EmployeeStatus.SAVED)) {
+            if (callback.equals(ButtonLabels.SHOW_STATISTIC.getCallback())) {
+                return showLastRecord(currentEmployee, sendMessage);
             }
         }
 
         return sendMessage;
     }
 
+    private SendMessage showLastRecord(Employee currentEmployee, SendMessage sendMessage) {
+        sendMessage.setText(postgres.getLastAddedRecord(currentEmployee));
+        return sendMessage;
+    }
+
     private SendMessage fillWorkTimeProcess(SendMessage sendMessage, Employee currentEmployee) {
 
         currentEmployee.setStatus(EmployeeStatus.WAITING_WORKTIME);
+        employeeService.save(currentEmployee);
         sendMessage.setText("""
                 В дневную или в ночную смену?)
                 """);
@@ -73,26 +84,29 @@ public class CallbackQueryHandler implements Handler {
 
         } else {
             if (currentEmployee.getJob().equals(EmployeePost.PRINTER)) {
-                postgres.createNewStatisticBuffer(currentEmployee);
                 postgres.addDateInBuffer(currentEmployee, dateService.getSqlDate(callback));
-
+                currentEmployee.setStatus(EmployeeStatus.WAITING_PRINTS_NUM);
+                employeeService.save(currentEmployee);
+                sendMessage.setText("Сколько всего Вы напечатали?)");
             }
         }
 
         return sendMessage;
     }
-private SendMessage addNewPrinter(SendMessage sendMessage, Employee currentEmployee, DayNight workTime){
-    currentEmployee.setWorkTime(workTime);
-    currentEmployee.setJob(EmployeePost.PRINTER);
-    currentEmployee.setStatus(EmployeeStatus.SAVED);
-    employeeService.save(currentEmployee);
-    sendMessage.setText("""
+
+    private SendMessage addNewPrinter(SendMessage sendMessage, Employee currentEmployee, DayNight workTime) {
+        currentEmployee.setWorkTime(workTime);
+        currentEmployee.setJob(EmployeePost.PRINTER);
+        currentEmployee.setStatus(EmployeeStatus.SAVED);
+        employeeService.save(currentEmployee);
+        sendMessage.setText("""
                 Отлично 👍 Чтобы записать статистику,\s
                 нажмите «Добавить статистику»
                 """);
-    sendMessage.setReplyMarkup(ReplyKeyboardFactory.getAddStatKeyboard());
-    return sendMessage;
-}
+        sendMessage.setReplyMarkup(ReplyKeyboardFactory.getAddStatKeyboard());
+        return sendMessage;
+    }
+
     private SendMessage addNewPacker(SendMessage sendMessage, Employee currentEmployee) {
         currentEmployee.setJob(EmployeePost.PACKER);
         currentEmployee.setStatus(EmployeeStatus.SAVED);

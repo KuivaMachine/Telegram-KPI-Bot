@@ -16,12 +16,13 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
-//TODO НАДО ДОБАВИТЬ МЕТОД НА СОЗДАНИЕ ТАБЛИЦЫ ПЕЧАТНИКА
+import java.util.List;
+
 
 @Log4j2
 @Component
 
-public class TelegramBot extends TelegramLongPollingBot {
+public class TelegramBot extends TelegramLongPollingBot{
 
     CallbackQueryHandler callbackQueryHandler;
     UpdateHandler updateHandler;
@@ -75,10 +76,16 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
             sendAnswer(callbackQueryHandler.process(update));
         }
-
         if (update.hasMessage() && update.getMessage().hasText()) {
-            sendAnswer(updateHandler.process(update));
+
+                sendAnswer(updateHandler.process(update));
         }
+        if (update.hasEditedMessage()){
+            //TODO: СДЕЛАТЬ ЛОГИКУ НА ИСПРАВЛЕННОЕ СООБЩЕНИЕ
+        }
+    }
+
+    private void sendAnswer(List<SendMessage> messageList) {
     }
 
 
@@ -93,7 +100,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    private void sendAnswer(SendMessage sendMessage) {
+    public void sendAnswer(SendMessage sendMessage) {
         int messageId;
         try {
             messageId = execute(sendMessage).getMessageId();

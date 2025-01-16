@@ -1,5 +1,13 @@
 package org.example.kpitelegrambot.data;
 
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+
+@RequiredArgsConstructor
+@Getter
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public enum AnswersList {
     HELP_MESSAGE("\"\\uD83D\\uDC4B Привет, я бот ПишиЧитай, и я помогу Вам создать задания на правописание словарных \" +\n" +
             "                  \"слов для Ваших детей\\n\\n\" +\n" +
@@ -19,11 +27,5 @@ public enum AnswersList {
             "                  \"Воспользуйтесь клавиатурой, чтобы начать работу\\uD83D\\uDC47\""),
     ADD_NEW_STATISTIC("Добавить статистику");
 
-    private final String text;
-    AnswersList(String text) {
-        this.text = text;
-    }
-    public String getText() {
-        return text;
-    }
+    String text;
 }

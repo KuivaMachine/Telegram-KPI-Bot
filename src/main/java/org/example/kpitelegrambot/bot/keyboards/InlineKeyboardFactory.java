@@ -86,4 +86,19 @@ public class InlineKeyboardFactory {
         inlineKeyboardMarkup.setKeyboard(keyboard);
         return inlineKeyboardMarkup;
     }
+
+    public  static InlineKeyboardMarkup getShowReceivedStatistic(){
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        InlineKeyboardButton show = new InlineKeyboardButton();
+        show.setText(ButtonLabels.SHOW_STATISTIC.getLabel());
+        show.setCallbackData(ButtonLabels.SHOW_STATISTIC.getCallback());
+
+        row1.add(show);
+        rows.add(row1);
+        inlineKeyboardMarkup.setKeyboard(rows);
+        return inlineKeyboardMarkup;
+    }
 }

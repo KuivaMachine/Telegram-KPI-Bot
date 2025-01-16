@@ -1,7 +1,7 @@
 package org.example.kpitelegrambot.data;
 
 public enum DayNight {
-    DAY("День \uD83C\uDF1E", "day"), NIGHT("Ночь \uD83C\uDF19", "night");
+    DAY("День \uD83C\uDF1E", "day"), NIGHT("Ночь \uD83C\uDF19", "night"), UNKNOWN ("UNKNOWN", "UNKNOWN");
 
     private final String callback;
     private final String label;
