@@ -10,22 +10,25 @@ import java.time.format.DateTimeFormatter;
 public class DateService {
     LocalDate localDate = LocalDate.now();
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-//TODO: ВЧЕРА И ПОЗАВЧЕРА ВООБЩЕ НЕ РАБОТАЮТ!!!!
+
     public String getCurrentDate() {
         return localDate.format(formatter);
     }
 
     public String getYesterdayDate() {
-        localDate = localDate.minusDays(1);
-        return localDate.format(formatter);
+        return localDate.minusDays(1).format(formatter);
     }
 
     public String getDBYDate() {
-        localDate = localDate.minusDays(2);
-        return localDate.format(formatter);
+        return localDate.minusDays(2).format(formatter);
     }
     public Date getSqlDate(String date) {
         LocalDate localDate = LocalDate.parse(date, formatter);
         return Date.valueOf(localDate);
+    }
+    public static String parseSqlDateToString(String date){
+        DateTimeFormatter formatter1 = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter formatter2 = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+        return LocalDate.parse(date, formatter1).format(formatter2);
     }
 }

@@ -54,16 +54,9 @@ public class CallbackQueryHandler implements Handler {
             }
         }
         if (currentEmployee.getStatus().equals(EmployeeStatus.SAVED)) {
-            if (callback.equals(ButtonLabels.SHOW_STATISTIC.getCallback())) {
-                return showLastRecord(currentEmployee, sendMessage);
-            }
+
         }
 
-        return sendMessage;
-    }
-
-    private SendMessage showLastRecord(Employee currentEmployee, SendMessage sendMessage) {
-        sendMessage.setText(postgres.getLastAddedRecord(currentEmployee));
         return sendMessage;
     }
 
@@ -79,18 +72,23 @@ public class CallbackQueryHandler implements Handler {
     }
 
     private SendMessage fillDateProcess(String callback, Employee currentEmployee, SendMessage sendMessage) {
-
+        String nicePhrase = "Вы - лучший";
         if (currentEmployee.getJob().equals(EmployeePost.PACKER)) {
-
+            postgres.addValueInBufferFromPacker(currentEmployee, dateService.getSqlDate(callback), "date");
+            nicePhrase = postgres.getNicePhrase();
+            postgres.moveDataFromPackerBufferToMainTable(currentEmployee);
         } else {
             if (currentEmployee.getJob().equals(EmployeePost.PRINTER)) {
-                postgres.addDateInBuffer(currentEmployee, dateService.getSqlDate(callback));
-                currentEmployee.setStatus(EmployeeStatus.WAITING_PRINTS_NUM);
-                employeeService.save(currentEmployee);
-                sendMessage.setText("Сколько всего Вы напечатали?)");
+                postgres.addValueInBufferFromPrinter(currentEmployee, dateService.getSqlDate(callback), "date");
+                nicePhrase = postgres.getNicePhraseToPrinter(currentEmployee);
+                postgres.moveDataFromPrinterBufferToMainTable(currentEmployee);
+
             }
         }
-
+        currentEmployee.setStatus(EmployeeStatus.SAVED);
+        employeeService.save(currentEmployee);
+        sendMessage.setText(String.format("Я все записал!\n%s", nicePhrase));
+        sendMessage.setReplyMarkup(ReplyKeyboardFactory.getShowAndAddKeyboard());
         return sendMessage;
     }
 
@@ -113,7 +111,7 @@ public class CallbackQueryHandler implements Handler {
         employeeService.save(currentEmployee);
         sendMessage.setText("""
                 Отлично 👍 Чтобы записать статистику,\s
-                нажмите «Добавить статистику»
+                нажмите «Добавить новую статистику»
                 """);
         sendMessage.setReplyMarkup(ReplyKeyboardFactory.getAddStatKeyboard());
         return sendMessage;

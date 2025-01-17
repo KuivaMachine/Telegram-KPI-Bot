@@ -71,9 +71,6 @@ public class TelegramBot extends TelegramLongPollingBot{
     public void onUpdateReceived(Update update) {
 
         if (update.hasCallbackQuery()) {
-            if (update.getCallbackQuery().getData().equals(ButtonLabels.I_AM_PACKER.getCallback()) || update.getCallbackQuery().getData().equals(ButtonLabels.I_AM_PRINTER.getCallback())||update.getCallbackQuery().getData().equals(DayNight.DAY.getCallback())||update.getCallbackQuery().getData().equals(DayNight.NIGHT.getCallback())) {
-                deleteLastMessage(update.getCallbackQuery().getMessage().getChatId(), updateHandler.getLastMessageId(update.getCallbackQuery().getMessage().getChatId()));
-            }
             sendAnswer(callbackQueryHandler.process(update));
         }
         if (update.hasMessage() && update.getMessage().hasText()) {
@@ -85,9 +82,6 @@ public class TelegramBot extends TelegramLongPollingBot{
         }
     }
 
-    private void sendAnswer(List<SendMessage> messageList) {
-    }
-
 
     public void deleteLastMessage(Long chatId, int lastMessageId) {
         try {
@@ -95,16 +89,16 @@ public class TelegramBot extends TelegramLongPollingBot{
             deleteMessage.setMessageId(lastMessageId);
             deleteMessage.setChatId(chatId);
             execute(deleteMessage);
+
         } catch (TelegramApiException e) {
             throw new RuntimeException(e);
         }
     }
 
     public void sendAnswer(SendMessage sendMessage) {
-        int messageId;
+
         try {
-            messageId = execute(sendMessage).getMessageId();
-            updateHandler.saveLastMessageId(sendMessage.getChatId(), messageId);
+           execute(sendMessage).getMessageId();
         } catch (TelegramApiException e) {
             throw new RuntimeException(e);
         }

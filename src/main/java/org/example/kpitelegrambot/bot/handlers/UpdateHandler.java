@@ -5,20 +5,17 @@ import org.example.kpitelegrambot.bot.TelegramBot;
 import org.example.kpitelegrambot.bot.keyboards.InlineKeyboardFactory;
 import org.example.kpitelegrambot.data.EmployeeStatus;
 import org.example.kpitelegrambot.entity.Employee;
-import org.example.kpitelegrambot.service.DeleteService;
 import org.example.kpitelegrambot.service.EmployeeService;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
-
-import java.util.List;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 
 
 @Component
 @RequiredArgsConstructor
 public class UpdateHandler implements Handler {
 
-    private final DeleteService deleteService;
     private final EmployeeService employeeService;
     Employee employee;
     TelegramBot telegramBot;
@@ -39,8 +36,9 @@ public class UpdateHandler implements Handler {
         sendMessage.setText("Я не знаю такой команды \uD83E\uDD37");
         employee = employeeService.getEmployeeByChatId(chatId);
 
-        if (text.equals("/kuiva")) {
+        if (text.equals("/forget_me")) {
             employeeService.deleteEmployeeByChatId(chatId);
+            return forgetEmployeeProcess(sendMessage);
         }
         return (switch (employee.getJob()) {
             case PACKER -> packerHandler.process(telegramBot, update, employee, sendMessage);
@@ -48,6 +46,15 @@ public class UpdateHandler implements Handler {
             case UNKNOWN -> registrationProcess(sendMessage, employee, update);
         });
 
+    }
+
+    private SendMessage forgetEmployeeProcess(SendMessage sendMessage) {
+        sendMessage.setText("""
+                Начнем с начала)
+                Например, с команды /start
+                """);
+        sendMessage.setReplyMarkup(new ReplyKeyboardRemove(true));
+        return sendMessage;
     }
 
 
@@ -60,8 +67,19 @@ public class UpdateHandler implements Handler {
         if (employee.getStatus().equals(EmployeeStatus.WAITING_FIO)) {
             return fillFioProcessing(sendMessage, employee, text);
         }
-        if (employee.getStatus().equals(EmployeeStatus.WAITING_JOB)||employee.getStatus().equals(EmployeeStatus.WAITING_WORKTIME)) {
+        if (employee.getStatus().equals(EmployeeStatus.WAITING_JOB)) {
             telegramBot.deleteLastMessage(chatId, update.getMessage().getMessageId());
+            sendMessage.setText("""
+                    Ну так кем Вы работаете?)
+                    """);
+            sendMessage.setReplyMarkup(InlineKeyboardFactory.getJobChoiceKeyboard());
+        }
+        if (employee.getStatus().equals(EmployeeStatus.WAITING_WORKTIME)) {
+            telegramBot.deleteLastMessage(chatId, update.getMessage().getMessageId());
+            sendMessage.setText("""
+                Вы работаете дневную или в ночную смену?)
+                """);
+            sendMessage.setReplyMarkup(InlineKeyboardFactory.getDayNightKeyboard());
         }
 
         return sendMessage;
@@ -108,16 +126,8 @@ public class UpdateHandler implements Handler {
                 Привет! 👋 Я бот KPI, я буду записывать Вашу статистику!  \uD83D\uDE0E
                 Введите Ваше ФИО, я его запомню.\s
                 Например: «Никифорова Екатерина Лемаровна» \uD83D\uDE42""");
+        sendMessage.setReplyMarkup(new ReplyKeyboardRemove(true));
         return sendMessage;
     }
 
-
-    public void saveLastMessageId(String chat_id, int messageId) {
-        int chatId = Integer.parseInt(chat_id);
-        deleteService.saveMessageId(chatId, messageId);
-    }
-
-    public int getLastMessageId(Long chatId) {
-        return deleteService.getLastMessageId(Math.toIntExact(chatId));
-    }
 }

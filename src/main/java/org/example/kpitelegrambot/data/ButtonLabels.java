@@ -14,7 +14,9 @@ public enum ButtonLabels {
     TODAY("today", "today"),
     YESTERDAY("yesterday", "yesterday"),
     DAY_BEFORE_YESTERDAY("day_before_yesterday", "day_before_yesterday"),
-    SHOW_STATISTIC("Показать, что я записал", "show_statistic");
+    SHOW_STATISTIC("Показать последнюю запись", "show_statistic"),
+    ADD_NEW_STATISTICS("Добавить новую статистику","add_new_statistics" ),
+    CANCEL_ADDING("Отменить добавление", "cancel_adding"),;
 
     String label;
     String callback;

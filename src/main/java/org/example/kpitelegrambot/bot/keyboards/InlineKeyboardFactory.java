@@ -101,4 +101,5 @@ public class InlineKeyboardFactory {
         inlineKeyboardMarkup.setKeyboard(rows);
         return inlineKeyboardMarkup;
     }
+
 }
