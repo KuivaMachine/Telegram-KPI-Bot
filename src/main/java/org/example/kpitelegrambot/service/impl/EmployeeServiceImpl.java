@@ -6,8 +6,8 @@ import lombok.experimental.FieldDefaults;
 import org.example.kpitelegrambot.data.DayNight;
 import org.example.kpitelegrambot.data.EmployeePost;
 import org.example.kpitelegrambot.data.EmployeeStatus;
-import org.example.kpitelegrambot.entity.Employee;
-import org.example.kpitelegrambot.entity.repository.EmployeeRepository;
+import org.example.kpitelegrambot.DAO.entity.Employee;
+import org.example.kpitelegrambot.DAO.entity.repository.EmployeeRepository;
 import org.example.kpitelegrambot.service.EmployeeService;
 import org.springframework.stereotype.Service;
 

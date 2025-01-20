@@ -1,4 +1,4 @@
-package org.example.kpitelegrambot.entity;
+package org.example.kpitelegrambot.DAO.entity;
 
 
 import jakarta.persistence.*;

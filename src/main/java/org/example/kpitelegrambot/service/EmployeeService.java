@@ -1,6 +1,6 @@
 package org.example.kpitelegrambot.service;
 
-import org.example.kpitelegrambot.entity.Employee;
+import org.example.kpitelegrambot.DAO.entity.Employee;
 import org.springframework.stereotype.Component;
 
 @Component

@@ -4,10 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.example.kpitelegrambot.bot.TelegramBot;
 import org.example.kpitelegrambot.bot.keyboards.InlineKeyboardFactory;
 import org.example.kpitelegrambot.data.EmployeeStatus;
-import org.example.kpitelegrambot.entity.Employee;
+import org.example.kpitelegrambot.DAO.entity.Employee;
 import org.example.kpitelegrambot.service.EmployeeService;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 
@@ -105,11 +106,16 @@ public class UpdateHandler implements Handler {
     private boolean matchesFio(String text) {
         String regex = ".*\\d.*";
         String[] words = text.split(" ");
+        if(words.length > 3){
+            return false;
+        }
         int n = 0;
         for (String word : words) {
-            if (Character.isUpperCase(word.charAt(0))) {
-                if (!word.matches(regex)) {
-                    n++;
+            if(!word.isEmpty()){
+                if (Character.isUpperCase(word.charAt(0))) {
+                    if (!word.matches(regex)) {
+                        n++;
+                    }
                 }
             }
         }

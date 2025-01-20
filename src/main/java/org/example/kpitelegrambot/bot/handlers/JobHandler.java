@@ -1,7 +1,7 @@
 package org.example.kpitelegrambot.bot.handlers;
 
 import org.example.kpitelegrambot.bot.TelegramBot;
-import org.example.kpitelegrambot.entity.Employee;
+import org.example.kpitelegrambot.DAO.entity.Employee;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
@@ -11,5 +11,5 @@ public interface JobHandler{
     SendMessage invalidNumberProcess(SendMessage sendMessage, String text);
     SendMessage showLastRecord(Employee currentEmployee, SendMessage sendMessage);
     SendMessage createNewStatisticPost(Employee currentEmployee, SendMessage sendMessage);
-    SendMessage helloProcess(SendMessage sendMessage, Employee currentEmployee);
+    SendMessage sayHelloProcess(SendMessage sendMessage, Employee currentEmployee);
 }

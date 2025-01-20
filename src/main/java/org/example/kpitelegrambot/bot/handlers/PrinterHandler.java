@@ -7,7 +7,7 @@ import org.example.kpitelegrambot.bot.keyboards.InlineKeyboardFactory;
 import org.example.kpitelegrambot.bot.keyboards.ReplyKeyboardFactory;
 import org.example.kpitelegrambot.data.ButtonLabels;
 import org.example.kpitelegrambot.data.EmployeeStatus;
-import org.example.kpitelegrambot.entity.Employee;
+import org.example.kpitelegrambot.DAO.entity.Employee;
 import org.example.kpitelegrambot.service.EmployeeService;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -27,7 +27,7 @@ public class PrinterHandler implements JobHandler {
         String receivedMessage = update.getMessage().getText();
 
         if (receivedMessage.equals("/start")) {
-            return helloProcess(sendMessage, currentEmployee);
+            return sayHelloProcess(sendMessage, currentEmployee);
         }
         if(receivedMessage.equals(ButtonLabels.CANCEL_ADDING.getLabel())){
             return cancelAddingStatistic(sendMessage, currentEmployee);
@@ -61,7 +61,7 @@ public class PrinterHandler implements JobHandler {
         return sendMessage;
     }
 
-    public SendMessage helloProcess(SendMessage sendMessage, Employee currentEmployee) {
+    public SendMessage sayHelloProcess(SendMessage sendMessage, Employee currentEmployee) {
         String[] fio = currentEmployee.getFio().split(" ");
         sendMessage.setText(String.format("Привет, %s! \nДобавим новую статистику?)",fio[1]));
         sendMessage.setReplyMarkup(ReplyKeyboardFactory.getAddStatKeyboard());

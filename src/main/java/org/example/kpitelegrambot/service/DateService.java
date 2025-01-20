@@ -22,8 +22,12 @@ public class DateService {
     public String getDBYDate() {
         return localDate.minusDays(2).format(formatter);
     }
-    public Date getSqlDate(String date) {
+    public Date parseStringToSqlDate(String date) {
         LocalDate localDate = LocalDate.parse(date, formatter);
+        return Date.valueOf(localDate);
+    }
+    public java.sql.Date getLocalDate() {
+        LocalDate localDate = LocalDate.now();
         return Date.valueOf(localDate);
     }
     public static String parseSqlDateToString(String date){

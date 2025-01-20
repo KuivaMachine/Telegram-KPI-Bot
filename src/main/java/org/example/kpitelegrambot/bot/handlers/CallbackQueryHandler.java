@@ -5,7 +5,7 @@ import org.example.kpitelegrambot.DAO.PostgreSQLController;
 import org.example.kpitelegrambot.bot.keyboards.InlineKeyboardFactory;
 import org.example.kpitelegrambot.bot.keyboards.ReplyKeyboardFactory;
 import org.example.kpitelegrambot.data.*;
-import org.example.kpitelegrambot.entity.Employee;
+import org.example.kpitelegrambot.DAO.entity.Employee;
 import org.example.kpitelegrambot.service.DateService;
 import org.example.kpitelegrambot.service.EmployeeService;
 import org.springframework.stereotype.Component;
@@ -73,18 +73,14 @@ public class CallbackQueryHandler implements Handler {
 
     private SendMessage fillDateProcess(String callback, Employee currentEmployee, SendMessage sendMessage) {
         String nicePhrase = "Вы - лучший";
-        if (currentEmployee.getJob().equals(EmployeePost.PACKER)) {
-            postgres.addValueInBufferFromPacker(currentEmployee, dateService.getSqlDate(callback), "date");
-            nicePhrase = postgres.getNicePhrase();
-            postgres.moveDataFromPackerBufferToMainTable(currentEmployee);
-        } else {
+
             if (currentEmployee.getJob().equals(EmployeePost.PRINTER)) {
-                postgres.addValueInBufferFromPrinter(currentEmployee, dateService.getSqlDate(callback), "date");
+                postgres.addValueInBufferFromPrinter(currentEmployee, dateService.parseStringToSqlDate(callback), "date");
                 nicePhrase = postgres.getNicePhraseToPrinter(currentEmployee);
                 postgres.moveDataFromPrinterBufferToMainTable(currentEmployee);
 
             }
-        }
+
         currentEmployee.setStatus(EmployeeStatus.SAVED);
         employeeService.save(currentEmployee);
         sendMessage.setText(String.format("Я все записал!\n%s", nicePhrase));
