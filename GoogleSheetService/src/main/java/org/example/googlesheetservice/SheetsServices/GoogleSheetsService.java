@@ -1,4 +1,4 @@
-package org.example.googlesheetservice;
+package org.example.googlesheetservice.SheetsServices;
 
 
 import com.google.api.client.auth.oauth2.Credential;
@@ -25,6 +25,10 @@ import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
 import java.time.LocalDateTime;
 import com.google.api.services.sheets.v4.model.ValueRange;
+import org.example.googlesheetservice.GoogleSheetServiceApplication;
+import org.example.googlesheetservice.Data.Months;
+import org.example.googlesheetservice.Data.RowColumn;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -61,7 +65,7 @@ public class GoogleSheetsService {
                 .setDataStoreFactory(new FileDataStoreFactory(new java.io.File("tokens")))
                 .setAccessType("offline")
                 .build();
-        LocalServerReceiver receiver = new LocalServerReceiver.Builder().build();
+        LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
         return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
     }
 

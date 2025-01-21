@@ -32,6 +32,7 @@ dependencies {
     implementation("org.postgresql:postgresql:42.7.5")
     implementation("com.google.auth:google-auth-library-oauth2-http:1.30.1")
     compileOnly("org.projectlombok:lombok")
+    implementation("org.springframework.kafka:spring-kafka")
     runtimeOnly("org.postgresql:postgresql")
     annotationProcessor("org.projectlombok:lombok")
     testImplementation("org.springframework.boot:spring-boot-starter-test")

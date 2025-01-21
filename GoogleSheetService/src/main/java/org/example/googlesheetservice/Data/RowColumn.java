@@ -1,4 +1,4 @@
-package org.example.googlesheetservice;
+package org.example.googlesheetservice.Data;
 
 import lombok.Getter;
 

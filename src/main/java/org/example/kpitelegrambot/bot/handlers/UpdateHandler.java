@@ -1,10 +1,12 @@
 package org.example.kpitelegrambot.bot.handlers;
 
 import lombok.RequiredArgsConstructor;
+import org.example.kpitelegrambot.DAO.entity.PrinterStatistic;
 import org.example.kpitelegrambot.bot.TelegramBot;
 import org.example.kpitelegrambot.bot.keyboards.InlineKeyboardFactory;
 import org.example.kpitelegrambot.data.EmployeeStatus;
 import org.example.kpitelegrambot.DAO.entity.Employee;
+import org.example.kpitelegrambot.googlesheets.KafkaProducer;
 import org.example.kpitelegrambot.service.EmployeeService;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -22,6 +24,7 @@ public class UpdateHandler implements Handler {
     TelegramBot telegramBot;
     private final PrinterHandler printerHandler;
     private final PackerHandler packerHandler;
+    private final KafkaProducer kafkaProducer;
 
     public void register(TelegramBot telegramBot) {
         this.telegramBot = telegramBot;
@@ -31,7 +34,7 @@ public class UpdateHandler implements Handler {
     public SendMessage process(Update update) {
         Long chatId = update.getMessage().getChatId();
         String text = update.getMessage().getText();
-
+        kafkaProducer.send("printer_stat_topic", new PrinterStatistic("2025-01-21","134","1"));
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
         sendMessage.setText("Я не знаю такой команды \uD83E\uDD37");
@@ -43,7 +46,7 @@ public class UpdateHandler implements Handler {
         }
         return (switch (employee.getJob()) {
             case PACKER -> packerHandler.process(telegramBot, update, employee, sendMessage);
-            case PRINTER -> printerHandler.process(telegramBot,update, employee, sendMessage);
+            case PRINTER -> printerHandler.process(telegramBot, update, employee, sendMessage);
             case UNKNOWN -> registrationProcess(sendMessage, employee, update);
         });
 
@@ -78,8 +81,8 @@ public class UpdateHandler implements Handler {
         if (employee.getStatus().equals(EmployeeStatus.WAITING_WORKTIME)) {
             telegramBot.deleteLastMessage(chatId, update.getMessage().getMessageId());
             sendMessage.setText("""
-                Вы работаете дневную или в ночную смену?)
-                """);
+                    Вы работаете дневную или в ночную смену?)
+                    """);
             sendMessage.setReplyMarkup(InlineKeyboardFactory.getDayNightKeyboard());
         }
 
@@ -106,12 +109,12 @@ public class UpdateHandler implements Handler {
     private boolean matchesFio(String text) {
         String regex = ".*\\d.*";
         String[] words = text.split(" ");
-        if(words.length > 3){
+        if (words.length > 3) {
             return false;
         }
         int n = 0;
         for (String word : words) {
-            if(!word.isEmpty()){
+            if (!word.isEmpty()) {
                 if (Character.isUpperCase(word.charAt(0))) {
                     if (!word.matches(regex)) {
                         n++;
