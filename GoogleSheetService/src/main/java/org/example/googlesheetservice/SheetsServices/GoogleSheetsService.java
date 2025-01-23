@@ -362,7 +362,7 @@ public class GoogleSheetsService {
         setCellBordersStyle(sheetService, new GridRange()
                 .setSheetId(SHEET_ID)
                 .setStartRowIndex(2)
-                .setEndRowIndex(35)
+                .setEndRowIndex(20+numberOfDayPrinters+numberOfNightPrinters)
                 .setStartColumnIndex(1)
                 .setEndColumnIndex(2), 2);
 
@@ -370,7 +370,7 @@ public class GoogleSheetsService {
         setCellBordersStyle(sheetService, new GridRange()
                 .setSheetId(SHEET_ID)
                 .setStartRowIndex(2)
-                .setEndRowIndex(35)
+                .setEndRowIndex(20+numberOfDayPrinters+numberOfNightPrinters)
                 .setStartColumnIndex(2)
                 .setEndColumnIndex(3), 2);
 
@@ -378,7 +378,7 @@ public class GoogleSheetsService {
         setCellBordersStyle(sheetService, new GridRange()
                 .setSheetId(SHEET_ID)
                 .setStartRowIndex(2)
-                .setEndRowIndex(35)
+                .setEndRowIndex(20+numberOfDayPrinters+numberOfNightPrinters)
                 .setStartColumnIndex(3)
                 .setEndColumnIndex(4), 2);
     }

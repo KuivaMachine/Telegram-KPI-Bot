@@ -10,7 +10,6 @@ import org.example.kpitelegrambot.googlesheets.KafkaProducer;
 import org.example.kpitelegrambot.service.EmployeeService;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 
@@ -34,7 +33,7 @@ public class UpdateHandler implements Handler {
     public SendMessage process(Update update) {
         Long chatId = update.getMessage().getChatId();
         String text = update.getMessage().getText();
-        kafkaProducer.send("printer_stat_topic", new PrinterStatistic("2025-01-21","134","1"));
+        kafkaProducer.send("printer_stat_topic", new PrinterStatistic("2026-01-21","134","1"));
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
         sendMessage.setText("Я не знаю такой команды \uD83E\uDD37");
@@ -134,7 +133,7 @@ public class UpdateHandler implements Handler {
         sendMessage.setText("""
                 Привет! 👋 Я бот KPI, я буду записывать Вашу статистику!  \uD83D\uDE0E
                 Введите Ваше ФИО, я его запомню.\s
-                Например: «Никифорова Екатерина Лемаровна» \uD83D\uDE42""");
+                Например: «Никифорова Любовь Николаевна» \uD83D\uDE42""");
         sendMessage.setReplyMarkup(new ReplyKeyboardRemove(true));
         return sendMessage;
     }

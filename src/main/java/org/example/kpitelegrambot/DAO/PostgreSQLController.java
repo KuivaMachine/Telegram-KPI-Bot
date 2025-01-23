@@ -5,17 +5,13 @@ import org.example.kpitelegrambot.DAO.entity.Employee;
 import org.example.kpitelegrambot.DAO.entity.PackerStatistic;
 import org.example.kpitelegrambot.DAO.entity.PrinterStatistic;
 import org.example.kpitelegrambot.service.DateService;
-import org.example.kpitelegrambot.service.EmployeeService;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
 import java.sql.*;
 import java.time.LocalDate;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 @Log4j2
@@ -72,7 +68,6 @@ public class PostgreSQLController {
                 "DROP TABLE %s;" +
                 "COMMIT;", mainTableName, bufferTableName, bufferTableName);
         makeSqlRequestByStatement(sql);
-
     }
 
     public String getLastAddedPackerRecord() {
