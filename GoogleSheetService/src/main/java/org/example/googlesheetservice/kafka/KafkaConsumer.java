@@ -11,12 +11,12 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class KafkaConsumer {
-
+private final ObjectMapper objectMapper = new ObjectMapper();
     private static final Logger log = LoggerFactory.getLogger(KafkaConsumer.class);
 
     @KafkaListener(topics = "printer_stat_topic", groupId = "kpi_mhc")
     public void receive (ConsumerRecord<String, String> record) {
-ObjectMapper objectMapper = new ObjectMapper();
+
         PrinterStatistic statistic = null;
         try {
             statistic = objectMapper.readValue(record.value(), PrinterStatistic.class);

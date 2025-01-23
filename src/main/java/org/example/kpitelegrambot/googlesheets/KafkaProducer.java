@@ -15,18 +15,15 @@ import java.util.concurrent.ExecutionException;
 @Service
 @RequiredArgsConstructor
 public class KafkaProducer {
-
-    private static final Logger log = LoggerFactory.getLogger(KafkaProducer.class);
-    public final KafkaTemplate<String, String> kafkaTemplate;
+    public final KafkaTemplate<String, PrinterStatistic> kafkaTemplate;
 
     public void send(String topic, PrinterStatistic statistic) {
-        SendResult<String, String> result = null;
-        try {
 
-ObjectMapper mapper = new ObjectMapper();
-String json = mapper.writeValueAsString(statistic);
-            result = kafkaTemplate.send(topic, json).get();
-        } catch (InterruptedException | ExecutionException | JsonProcessingException e) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.writeValueAsString(statistic);
+            kafkaTemplate.send(topic, statistic);
+        } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
 
