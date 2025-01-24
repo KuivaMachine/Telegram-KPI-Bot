@@ -5,6 +5,7 @@ import org.example.kpitelegrambot.DAO.entity.Employee;
 import org.example.kpitelegrambot.DAO.entity.PackerStatistic;
 import org.example.kpitelegrambot.DAO.entity.PrinterStatistic;
 import org.example.kpitelegrambot.service.DateService;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -27,8 +28,14 @@ public class PostgreSQLController {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
-    public void makeSqlRequestByStatement(String sql) {
-        jdbcTemplate.execute(sql);
+    public boolean makeSqlRequestByStatement(String sql) {
+        try {
+            jdbcTemplate.execute(sql);
+        } catch (DataAccessException e) {
+            log.error(e.getMessage());
+            return false;
+        }
+        return true;
     }
 
     public void makeSqlRequestByPreparedStatement(String sql, Object data) {
@@ -58,7 +65,7 @@ public class PostgreSQLController {
         makeSqlRequestByPreparedStatement(sql, value);
     }
 
-    public void moveDataFromPrinterBufferToMainTable(Employee currentEmployee) {
+    public boolean moveDataFromPrinterBufferToMainTable(Employee currentEmployee) {
         String bufferTableName = String.format("statistic_buffer_from_printer_%s", currentEmployee.getChatId());
         String mainTableName = String.format("statistic_from_%s", currentEmployee.getChatId());
         String sql = String.format("BEGIN TRANSACTION; " +
@@ -67,7 +74,7 @@ public class PostgreSQLController {
                 "FROM %s;" +
                 "DROP TABLE %s;" +
                 "COMMIT;", mainTableName, bufferTableName, bufferTableName);
-        makeSqlRequestByStatement(sql);
+        return makeSqlRequestByStatement(sql);
     }
 
     public String getLastAddedPackerRecord() {
@@ -101,7 +108,7 @@ public class PostgreSQLController {
         return sb.toString();
     }
 
-    public String getLastAddedPrinterRecord(Employee currentEmployee) {
+    public String getLastAddedPrinterRecordToString(Employee currentEmployee) {
         String tableName = String.format("statistic_from_%s", currentEmployee.getChatId());
         String getLastStatRequest = String.format("SELECT date, prints_num, defects_num " +
                 "FROM %s " +
@@ -119,6 +126,21 @@ public class PostgreSQLController {
         }
 
         return sb.toString();
+    }
+
+    public PrinterStatistic getLastAddedPrinterRecord(Employee currentEmployee) {
+        String tableName = String.format("statistic_from_%s", currentEmployee.getChatId());
+        String getLastStatRequest = String.format("SELECT * " +
+                "FROM %s " +
+                "ORDER BY id DESC " +
+                "LIMIT 1;", tableName);
+        PrinterStatistic statistic = jdbcTemplate.queryForObject(getLastStatRequest, new PrinterStatisticMapper());
+        if (statistic != null) {
+            statistic.setFio(currentEmployee.getFio());
+            return statistic;
+        } else {
+            return null;
+        }
     }
 
     public void deletePrinterBuffer(Employee currentEmployee) {
@@ -208,7 +230,7 @@ public class PostgreSQLController {
     public boolean isAddedPackerStatisticToday() {
         Date date = Date.valueOf(LocalDate.now());
         String sql = "SELECT date_column FROM statistics_by_packers WHERE date_column = ?;";
-        try (Connection connection= dataSource.getConnection()){
+        try (Connection connection = dataSource.getConnection()) {
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
             preparedStatement.setDate(1, date);
             ResultSet resultSet = preparedStatement.executeQuery();

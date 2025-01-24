@@ -91,7 +91,7 @@ public class PrinterHandler implements JobHandler {
     }
 
     public SendMessage showLastRecord(Employee currentEmployee, SendMessage sendMessage) {
-        sendMessage.setText(postgres.getLastAddedPrinterRecord(currentEmployee));
+        sendMessage.setText(postgres.getLastAddedPrinterRecordToString(currentEmployee));
         return sendMessage;
     }
 

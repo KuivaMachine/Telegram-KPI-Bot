@@ -2,12 +2,16 @@ package org.example.kpitelegrambot.bot.handlers;
 
 import lombok.RequiredArgsConstructor;
 import org.example.kpitelegrambot.DAO.PostgreSQLController;
+import org.example.kpitelegrambot.DAO.entity.PrinterStatistic;
 import org.example.kpitelegrambot.bot.keyboards.InlineKeyboardFactory;
 import org.example.kpitelegrambot.bot.keyboards.ReplyKeyboardFactory;
 import org.example.kpitelegrambot.data.*;
 import org.example.kpitelegrambot.DAO.entity.Employee;
+import org.example.kpitelegrambot.googlesheets.KafkaProducer;
 import org.example.kpitelegrambot.service.DateService;
 import org.example.kpitelegrambot.service.EmployeeService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -16,8 +20,10 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 @RequiredArgsConstructor
 public class CallbackQueryHandler implements Handler {
 
+    private static final Logger log = LoggerFactory.getLogger(CallbackQueryHandler.class);
     private final EmployeeService employeeService;
     private final PostgreSQLController postgres;
+    private final KafkaProducer kafkaProducer;
     Employee currentEmployee;
     DateService dateService = new DateService();
 
@@ -72,15 +78,17 @@ public class CallbackQueryHandler implements Handler {
     }
 
     private SendMessage fillDateProcess(String callback, Employee currentEmployee, SendMessage sendMessage) {
-        String nicePhrase = "Вы - лучший";
-
-            if (currentEmployee.getJob().equals(EmployeePost.PRINTER)) {
-                postgres.addValueInBufferFromPrinter(currentEmployee, dateService.parseStringToSqlDate(callback), "date");
-                nicePhrase = postgres.getNicePhraseToPrinter(currentEmployee);
-                postgres.moveDataFromPrinterBufferToMainTable(currentEmployee);
-
+        String nicePhrase;
+        postgres.addValueInBufferFromPrinter(currentEmployee, dateService.parseStringToSqlDate(callback), "date");
+        nicePhrase = postgres.getNicePhraseToPrinter(currentEmployee);
+        if (postgres.moveDataFromPrinterBufferToMainTable(currentEmployee)) {
+            PrinterStatistic statistic = postgres.getLastAddedPrinterRecord(currentEmployee);
+            if(statistic!=null) {
+                kafkaProducer.send("printer_stat_topic", statistic);
+            }else {
+                log.error(String.format("Couldn't send printer statistic %s to Kafka :(", currentEmployee.getChatId()));
             }
-
+        }
         currentEmployee.setStatus(EmployeeStatus.SAVED);
         employeeService.save(currentEmployee);
         sendMessage.setText(String.format("Я все записал!\n%s", nicePhrase));

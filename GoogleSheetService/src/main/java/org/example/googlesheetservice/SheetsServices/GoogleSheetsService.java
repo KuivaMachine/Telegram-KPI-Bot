@@ -1,80 +1,46 @@
 package org.example.googlesheetservice.SheetsServices;
 
 
-import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
-import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
-import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.gson.GsonFactory;
-import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.sheets.v4.Sheets;
-import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.*;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
+import org.example.googlesheetservice.Data.Months;
+import org.example.googlesheetservice.Data.PrinterStatistic;
+import org.example.googlesheetservice.Data.RowColumn;
+import org.springframework.stereotype.Component;
 
-
-
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
 import java.time.LocalDateTime;
-import com.google.api.services.sheets.v4.model.ValueRange;
-import org.example.googlesheetservice.GoogleSheetServiceApplication;
-import org.example.googlesheetservice.Data.Months;
-import org.example.googlesheetservice.Data.RowColumn;
-
 import java.util.Collections;
 import java.util.List;
 
 @Log4j2
+@Component
 public class GoogleSheetsService {
 
-    private final int numberOfDayPrinters;
-    private final int numberOfNightPrinters;
+    public final Sheets sheetService;
 
-    public Sheets sheetService;
-    private final String APPLICATION_NAME = "KPI MustHaveCase";
-    private final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private String SPREADSHEET_ID = "1NpExJ1FOSxgpkPRFmR5q0lKCeIfD0vujReHkwynY_tY";
     private final int SHEET_ID = 1962952644;
-    private final List<String> SCOPES = List.of(SheetsScopes.SPREADSHEETS);
 
-    public GoogleSheetsService(int numberOfDayPrinters, int numberOfNightPrinters) {
-        this.numberOfDayPrinters = numberOfDayPrinters;
-        this.numberOfNightPrinters = numberOfNightPrinters;
+
+    public GoogleSheetsService(Sheets sheetService) {
+        this.sheetService = sheetService;
     }
 
 
-    private Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT) throws IOException {
-        String CREDENTIALS_FILE_PATH = "/credential.json";
-        InputStream in = GoogleSheetServiceApplication.class.getResourceAsStream(CREDENTIALS_FILE_PATH);
-        if (in == null) {
-            throw new FileNotFoundException("Resource not found: " + CREDENTIALS_FILE_PATH);
+  /*  @PostConstruct
+    public void init() {
+        try {
+            var list = sheetService.spreadsheets().get(SPREADSHEET_ID).execute().getSpreadsheetUrl();
+            System.out.println(list);
+            // createNewSheet(13,12);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        GoogleClientSecrets clientSecrets =
-                GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
-
-        GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
-                HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES)
-                .setDataStoreFactory(new FileDataStoreFactory(new java.io.File("tokens")))
-                .setAccessType("offline")
-                .build();
-        LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
-        return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
-    }
-
-    public Sheets getSheetService() throws IOException, GeneralSecurityException {
-        final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-        return new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
-                .setApplicationName(APPLICATION_NAME)
-                .build();
-    }
+    }*/
 
     private int findSheetIdByTitle(String title) {
         try {
@@ -157,20 +123,15 @@ public class GoogleSheetsService {
         }
     }
 
-    public void createNewTable(Sheets sheetService, String title) {
-        String spreadsheet_id;
+    public String createNewTable(Sheets sheetService, String title) {
 
-
-        Spreadsheet spreadsheet = new Spreadsheet()
+        Spreadsheet newTable = new Spreadsheet()
                 .setProperties(new SpreadsheetProperties().setTitle(title));
         try {
-            spreadsheet_id = sheetService.spreadsheets().create(spreadsheet).execute().getSpreadsheetId();
-
+            return sheetService.spreadsheets().create(newTable).execute().getSpreadsheetId();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-        SPREADSHEET_ID = spreadsheet_id;
     }
 
     public void mergeCells(Sheets sheetService, GridRange range) {
@@ -226,6 +187,7 @@ public class GoogleSheetsService {
             throw new RuntimeException(e);
         }
     }
+
     public void setCellBordersStyle(Sheets sheetService, GridRange range, int borderWidth) {
         Border border = new Border()
                 .setStyle("SOLID")
@@ -252,9 +214,9 @@ public class GoogleSheetsService {
 
     }
 
-    public void createNewSheet() throws GeneralSecurityException, IOException {
+    public void createNewSheet(int numberOfDayPrinters, int numberOfNightPrinters) throws GeneralSecurityException, IOException {
 
-        sheetService = getSheetService();
+
 //        addNewSheet(sheetService, SHEET_NAME);
 //        this.SHEET_ID = findSheetIdByTitle(SHEET_NAME);
         mergeCells(sheetService, new GridRange()
@@ -276,7 +238,7 @@ public class GoogleSheetsService {
         //ФОРМАТ ВСЕЙ ТАБЛИЦЫ
         setCellStyle(sheetService, new GridRange().setSheetId(SHEET_ID)
                 .setStartRowIndex(1)
-                .setEndRowIndex(19+numberOfDayPrinters+numberOfNightPrinters)
+                .setEndRowIndex(19 + numberOfDayPrinters + numberOfNightPrinters)
                 .setStartColumnIndex(1)
                 .setEndColumnIndex(35), getColorByHEX("#ffffff"), "CENTER", 11, false, 1);
 
@@ -327,42 +289,42 @@ public class GoogleSheetsService {
 
         //ФОРМАТ СТРОКИ "ОБЩЕЕ ДЕНЬ"
         setCellStyle(sheetService, new GridRange().setSheetId(SHEET_ID)
-                .setStartRowIndex(14+numberOfDayPrinters)
-                .setEndRowIndex(14+numberOfDayPrinters+1)
+                .setStartRowIndex(14 + numberOfDayPrinters)
+                .setEndRowIndex(14 + numberOfDayPrinters + 1)
                 .setStartColumnIndex(1)
                 .setEndColumnIndex(35), getColorByHEX("#76d2a1"), "LEFT", 11, true, 1);
 
         //ФОРМАТ СТРОКИ "НОЧНАЯ СМЕНА"
         setCellStyle(sheetService, new GridRange().setSheetId(SHEET_ID)
-                .setStartRowIndex((14+numberOfDayPrinters-1)+3)
-                .setEndRowIndex((14+numberOfDayPrinters-1)+4)
+                .setStartRowIndex((14 + numberOfDayPrinters - 1) + 3)
+                .setEndRowIndex((14 + numberOfDayPrinters - 1) + 4)
                 .setStartColumnIndex(1)
                 .setEndColumnIndex(35), getColorByHEX("#4dd0e1"), "LEFT", 11, true, 1);
 
         //ФОРМАТ СТРОКИ "ОБЩЕЕ НОЧЬ"
         setCellStyle(sheetService, new GridRange().setSheetId(SHEET_ID)
-                .setStartRowIndex((14+numberOfDayPrinters-1)+4+numberOfNightPrinters)
-                .setEndRowIndex((14+numberOfDayPrinters-1)+4+numberOfNightPrinters+1)
+                .setStartRowIndex((14 + numberOfDayPrinters - 1) + 4 + numberOfNightPrinters)
+                .setEndRowIndex((14 + numberOfDayPrinters - 1) + 4 + numberOfNightPrinters + 1)
                 .setStartColumnIndex(1)
                 .setEndColumnIndex(35), getColorByHEX("#4dd0e1"), "LEFT", 11, true, 1);
 
         //ФОРМАТ СТРОКИ "ОБЩЕЕ ПЕЧАТЬ"
         setCellStyle(sheetService, new GridRange().setSheetId(SHEET_ID)
-                .setStartRowIndex((14+numberOfDayPrinters-1)+4+numberOfNightPrinters+2)
-                .setEndRowIndex((14+numberOfDayPrinters-1)+4+numberOfNightPrinters+3)
+                .setStartRowIndex((14 + numberOfDayPrinters - 1) + 4 + numberOfNightPrinters + 2)
+                .setEndRowIndex((14 + numberOfDayPrinters - 1) + 4 + numberOfNightPrinters + 3)
                 .setStartColumnIndex(1)
                 .setEndColumnIndex(35), getColorByHEX("#d8ffe1"), "LEFT", 11, true, 1);
 
         //ОСНОВНЫЕ ТЕСТОВЫЕ ПОЛЯ
-        updateData("B3:B14", new ValueRange().setValues(List.of(List.of(""),List.of("СБОРКА"), List.of("WB MHC"), List.of("WB Signum"), List.of("WB Silicosha"),List.of("OZON MHC"),List.of("Yandex MHC"),List.of("WB PrintKid"), List.of("FBO"),List.of("ОБЩЕЕ СБОРКА"),List.of(""),List.of("ДНЕВНАЯ СМЕНА  (Напечатано/Брак)"))));
-        updateData(String.format("B%d:B%d",15+numberOfDayPrinters,15+numberOfDayPrinters+2), new ValueRange().setValues(List.of(List.of("ОБЩЕЕ ДЕНЬ"),List.of(""), List.of("НОЧНАЯ СМЕНА"))));
-        updateData(String.format("B%d:B%d",(15+numberOfDayPrinters-1)+4+numberOfNightPrinters,(15+numberOfDayPrinters-1)+4+numberOfNightPrinters+2), new ValueRange().setValues(List.of(List.of("ОБЩЕЕ НОЧЬ"),List.of(""), List.of("ОБЩЕЕ ПЕЧАТЬ"))));
+        updateData("B3:B14", new ValueRange().setValues(List.of(List.of(""), List.of("СБОРКА"), List.of("WB MHC"), List.of("WB Signum"), List.of("WB Silicosha"), List.of("OZON MHC"), List.of("Yandex MHC"), List.of("WB PrintKid"), List.of("FBO"), List.of("ОБЩЕЕ СБОРКА"), List.of(""), List.of("ДНЕВНАЯ СМЕНА  (Напечатано/Брак)"))));
+        updateData(String.format("B%d:B%d", 15 + numberOfDayPrinters, 15 + numberOfDayPrinters + 2), new ValueRange().setValues(List.of(List.of("ОБЩЕЕ ДЕНЬ"), List.of(""), List.of("НОЧНАЯ СМЕНА"))));
+        updateData(String.format("B%d:B%d", (15 + numberOfDayPrinters - 1) + 4 + numberOfNightPrinters, (15 + numberOfDayPrinters - 1) + 4 + numberOfNightPrinters + 2), new ValueRange().setValues(List.of(List.of("ОБЩЕЕ НОЧЬ"), List.of(""), List.of("ОБЩЕЕ ПЕЧАТЬ"))));
 
         //ФОРМАТ ОСНОВНОГО БЛОКА С ФИО И ПОКАЗАТЕЛЯМИ
         setCellBordersStyle(sheetService, new GridRange()
                 .setSheetId(SHEET_ID)
                 .setStartRowIndex(2)
-                .setEndRowIndex(20+numberOfDayPrinters+numberOfNightPrinters)
+                .setEndRowIndex(20 + numberOfDayPrinters + numberOfNightPrinters)
                 .setStartColumnIndex(1)
                 .setEndColumnIndex(2), 2);
 
@@ -370,7 +332,7 @@ public class GoogleSheetsService {
         setCellBordersStyle(sheetService, new GridRange()
                 .setSheetId(SHEET_ID)
                 .setStartRowIndex(2)
-                .setEndRowIndex(20+numberOfDayPrinters+numberOfNightPrinters)
+                .setEndRowIndex(20 + numberOfDayPrinters + numberOfNightPrinters)
                 .setStartColumnIndex(2)
                 .setEndColumnIndex(3), 2);
 
@@ -378,7 +340,7 @@ public class GoogleSheetsService {
         setCellBordersStyle(sheetService, new GridRange()
                 .setSheetId(SHEET_ID)
                 .setStartRowIndex(2)
-                .setEndRowIndex(20+numberOfDayPrinters+numberOfNightPrinters)
+                .setEndRowIndex(20 + numberOfDayPrinters + numberOfNightPrinters)
                 .setStartColumnIndex(3)
                 .setEndColumnIndex(4), 2);
     }
@@ -395,4 +357,9 @@ public class GoogleSheetsService {
         int blue = Integer.parseInt(hex.substring(5, 7), 16);
         return new Color().setRed(red / 255f).setGreen(green / 255f).setBlue(blue / 255f);
     }
+
+    public void addPrinterStatistic(PrinterStatistic statistic) {
+
+    }
+
 }

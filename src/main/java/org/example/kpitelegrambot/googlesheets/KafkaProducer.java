@@ -1,6 +1,5 @@
 package org.example.kpitelegrambot.googlesheets;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.example.kpitelegrambot.DAO.entity.PrinterStatistic;
@@ -15,18 +14,16 @@ import java.util.concurrent.ExecutionException;
 @Service
 @RequiredArgsConstructor
 public class KafkaProducer {
+    private static final Logger log = LoggerFactory.getLogger(KafkaProducer.class);
     public final KafkaTemplate<String, PrinterStatistic> kafkaTemplate;
 
     public void send(String topic, PrinterStatistic statistic) {
-
+        SendResult<String, PrinterStatistic> result = null;
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.writeValueAsString(statistic);
-            kafkaTemplate.send(topic, statistic);
-        } catch (JsonProcessingException e) {
+            result = kafkaTemplate.send(topic, statistic).get();
+        } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
-
-
+        log.info(result.getRecordMetadata().toString());
     }
 }

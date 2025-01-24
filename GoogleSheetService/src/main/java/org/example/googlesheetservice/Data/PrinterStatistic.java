@@ -3,20 +3,22 @@ package org.example.googlesheetservice.Data;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
+import lombok.Setter;
 
 
 @Getter
 public class PrinterStatistic {
     private final String date;
-    private  final String prints_num;
+    private final String prints_num;
     private final String defects_num;
+    private final String fio;
 
-    public PrinterStatistic(@JsonProperty("date") String date, @JsonProperty("prints_num") String prints_num, @JsonProperty("defects_num")String defects_num) {
+    public PrinterStatistic(@JsonProperty("date") String date, @JsonProperty("prints_num") String prints_num, @JsonProperty("defects_num") String defects_num, String fio) {
         this.date = date;
         this.prints_num = prints_num;
         this.defects_num = defects_num;
+        this.fio = fio;
     }
-
 
     @Override
     public String toString() {
@@ -24,6 +26,7 @@ public class PrinterStatistic {
                 "date='" + date + '\'' +
                 ", prints_num='" + prints_num + '\'' +
                 ", defects_num='" + defects_num + '\'' +
+                ", fio='" + fio + '\'' +
                 '}';
     }
 }

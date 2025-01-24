@@ -9,6 +9,7 @@ public enum Months {
     Months(String translation) {
         this.translation = translation;
     }
+
     public String getTranslation() {
         return translation;
     }

@@ -8,7 +8,7 @@ public enum RowColumn {
 
     private final String description;
 
-    RowColumn (String description) {
+    RowColumn(String description) {
         this.description = description;
     }
 }
