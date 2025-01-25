@@ -9,10 +9,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 @EnableConfigurationProperties({TelegramBotConfig.class})
 public class RunDispatcher {
 
-
-
     public static void main(String[] args) {
-
         SpringApplication.run(RunDispatcher.class, args);
     }
 
