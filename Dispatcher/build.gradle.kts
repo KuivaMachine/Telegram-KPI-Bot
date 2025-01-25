@@ -9,7 +9,7 @@ version = "0.0.1-SNAPSHOT"
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(23)
     }
 }
 
@@ -30,10 +30,10 @@ dependencies {
     implementation ("com.google.oauth-client:google-oauth-client-jetty:1.34.1")
     implementation ("com.google.apis:google-api-services-sheets:v4-rev20220927-2.0.0")
     implementation("org.postgresql:postgresql:42.7.5")
+    runtimeOnly("org.postgresql:postgresql")
     implementation("com.google.auth:google-auth-library-oauth2-http:1.30.1")
     compileOnly("org.projectlombok:lombok")
     implementation("org.springframework.kafka:spring-kafka")
-    runtimeOnly("org.postgresql:postgresql")
     annotationProcessor("org.projectlombok:lombok")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
