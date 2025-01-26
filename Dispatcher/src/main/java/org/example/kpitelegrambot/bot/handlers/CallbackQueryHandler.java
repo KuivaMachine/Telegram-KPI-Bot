@@ -1,15 +1,18 @@
 package org.example.kpitelegrambot.bot.handlers;
 
 import lombok.RequiredArgsConstructor;
-import org.example.kpitelegrambot.DAO.PostgreSQLController;
-import org.example.kpitelegrambot.DAO.entity.PrinterStatistic;
 import org.example.kpitelegrambot.bot.keyboards.InlineKeyboardFactory;
 import org.example.kpitelegrambot.bot.keyboards.ReplyKeyboardFactory;
-import org.example.kpitelegrambot.data.*;
-import org.example.kpitelegrambot.DAO.entity.Employee;
+import org.example.kpitelegrambot.data.ButtonLabels;
+import org.example.postgresql.data.DayNight;
+import org.example.postgresql.data.EmployeePost;
+import org.example.postgresql.data.EmployeeStatus;
 import org.example.kpitelegrambot.googlesheets.KafkaProducer;
-import org.example.kpitelegrambot.service.DateService;
-import org.example.kpitelegrambot.service.EmployeeService;
+import org.example.postgresql.service.EmployeeService;
+import org.example.postgresql.entity.Employee;
+import org.example.postgresql.entity.PrinterStatistic;
+import org.example.postgresql.service.DateService;
+import org.example.postgresql.DAO.PostgreSQLController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -83,10 +86,9 @@ public class CallbackQueryHandler implements Handler {
         nicePhrase = postgres.getNicePhraseToPrinter(currentEmployee);
         if (postgres.moveDataFromPrinterBufferToMainTable(currentEmployee)) {
             PrinterStatistic statistic = postgres.getLastAddedPrinterRecord(currentEmployee);
-            if(statistic!=null) {
-                kafkaProducer.send("printer_stat_topic", statistic);
+            if(statistic!=null) {kafkaProducer.send("printer_stat_topic", statistic);
             }else {
-                log.error(String.format("Couldn't send printer statistic %s to Kafka :(", currentEmployee.getChatId()));
+                log.error(String.format("Couldn't send printer statistic %s | %s to Kafka :(", statistic.toString(), currentEmployee.getChatId()));
             }
         }
         currentEmployee.setStatus(EmployeeStatus.SAVED);

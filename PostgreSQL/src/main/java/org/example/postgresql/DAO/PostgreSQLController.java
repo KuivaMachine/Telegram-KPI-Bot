@@ -1,13 +1,13 @@
-package org.example.kpitelegrambot.DAO;
+package org.example.postgresql.DAO;
 
 import lombok.extern.log4j.Log4j2;
-import org.example.kpitelegrambot.DAO.entity.Employee;
-import org.example.kpitelegrambot.DAO.entity.PackerStatistic;
-import org.example.kpitelegrambot.DAO.entity.PrinterStatistic;
-import org.example.kpitelegrambot.service.DateService;
+import org.example.postgresql.entity.*;
+import org.example.postgresql.service.DateService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Controller;
 
 import javax.sql.DataSource;
 import java.sql.*;
@@ -16,16 +16,16 @@ import java.util.List;
 import java.util.Random;
 
 @Log4j2
-@Component
+@Controller
 public class PostgreSQLController {
 
 
     private final JdbcTemplate jdbcTemplate;
-    private final DataSource dataSource;
+   /// private final DataSource dataSource;
 
-    public PostgreSQLController(DataSource dataSource) {
-        this.dataSource = dataSource;
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
+    @Autowired
+    public PostgreSQLController(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public boolean makeSqlRequestByStatement(String sql) {
@@ -230,7 +230,8 @@ public class PostgreSQLController {
     public boolean isAddedPackerStatisticToday() {
         Date date = Date.valueOf(LocalDate.now());
         String sql = "SELECT date_column FROM statistics_by_packers WHERE date_column = ?;";
-        try (Connection connection = dataSource.getConnection()) {
+
+    /*    try (Connection connection = dataSource.getConnection()) {
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
             preparedStatement.setDate(1, date);
             ResultSet resultSet = preparedStatement.executeQuery();
@@ -241,7 +242,7 @@ public class PostgreSQLController {
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        }
+        }*/
         return false;
     }
 }

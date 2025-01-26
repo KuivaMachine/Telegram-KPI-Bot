@@ -1,4 +1,4 @@
-package org.example.kpitelegrambot.DAO.entity;
+package org.example.postgresql.entity;
 
 
 import lombok.AccessLevel;

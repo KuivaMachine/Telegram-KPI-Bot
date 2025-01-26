@@ -1,6 +1,5 @@
-package org.example.kpitelegrambot.DAO;
+package org.example.postgresql.entity;
 
-import org.example.kpitelegrambot.DAO.entity.PrinterStatistic;
 import org.springframework.jdbc.core.RowMapper;
 
 import java.sql.ResultSet;

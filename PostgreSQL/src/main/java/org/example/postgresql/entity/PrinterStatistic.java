@@ -1,4 +1,4 @@
-package org.example.kpitelegrambot.DAO.entity;
+package org.example.postgresql.entity;
 
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -22,5 +22,13 @@ public class PrinterStatistic {
 
     }
 
-
+    @Override
+    public String toString() {
+        return "PrinterStatistic{" +
+                "date='" + date + '\'' +
+                ", prints_num='" + prints_num + '\'' +
+                ", defects_num='" + defects_num + '\'' +
+                ", fio='" + fio + '\'' +
+                '}';
+    }
 }

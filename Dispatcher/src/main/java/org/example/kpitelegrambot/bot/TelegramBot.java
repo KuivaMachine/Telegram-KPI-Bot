@@ -1,12 +1,11 @@
 package org.example.kpitelegrambot.bot;
 
 
+import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
 import org.example.kpitelegrambot.bot.configuration.TelegramBotConfig;
 import org.example.kpitelegrambot.bot.handlers.CallbackQueryHandler;
 import org.example.kpitelegrambot.bot.handlers.UpdateHandler;
-import org.example.kpitelegrambot.data.ButtonLabels;
-import org.example.kpitelegrambot.data.DayNight;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
@@ -16,12 +15,9 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
-import java.util.List;
-
 
 @Log4j2
 @Component
-
 public class TelegramBot extends TelegramLongPollingBot{
 
     CallbackQueryHandler callbackQueryHandler;
@@ -31,7 +27,6 @@ public class TelegramBot extends TelegramLongPollingBot{
 
     public TelegramBot(CallbackQueryHandler callbackQueryHandler, UpdateHandler updateHandler, TelegramBotConfig telegramBotConfig) {
         super(telegramBotConfig.getToken());
-
         this.callbackQueryHandler = callbackQueryHandler;
         this.updateHandler = updateHandler;
         this.telegramBotConfig = telegramBotConfig;
@@ -74,7 +69,6 @@ public class TelegramBot extends TelegramLongPollingBot{
             sendAnswer(callbackQueryHandler.process(update));
         }
         if (update.hasMessage() && update.getMessage().hasText()) {
-
                 sendAnswer(updateHandler.process(update));
         }
         if (update.hasEditedMessage()){

@@ -1,4 +1,4 @@
-package org.example.kpitelegrambot.data;
+package org.example.postgresql.data;
 
 public enum EmployeeStatus {
     SAVED, UNKNOWN_USER, WAITING_FIO, WAITING_JOB, WAITING_WORKTIME,

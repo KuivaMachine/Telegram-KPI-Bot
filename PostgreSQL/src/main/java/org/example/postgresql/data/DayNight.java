@@ -1,4 +1,4 @@
-package org.example.kpitelegrambot.data;
+package org.example.postgresql.data;
 
 public enum DayNight {
     DAY("День \uD83C\uDF1E", "day"), NIGHT("Ночь \uD83C\uDF19", "night"), UNKNOWN ("UNKNOWN", "UNKNOWN");

@@ -1,6 +1,6 @@
-package org.example.kpitelegrambot.service;
+package org.example.postgresql.service;
 
-import org.example.kpitelegrambot.DAO.entity.Employee;
+import org.example.postgresql.entity.Employee;
 import org.springframework.stereotype.Component;
 
 @Component

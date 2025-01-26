@@ -1,13 +1,11 @@
 package org.example.kpitelegrambot.bot.keyboards;
 
 import org.example.kpitelegrambot.data.ButtonLabels;
-import org.example.kpitelegrambot.data.DayNight;
-import org.example.kpitelegrambot.service.DateService;
+import org.example.postgresql.data.DayNight;
+import org.example.postgresql.service.DateService;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
