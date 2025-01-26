@@ -3,6 +3,7 @@ package org.example.kpitelegrambot.bot.handlers;
 import lombok.RequiredArgsConstructor;
 import org.example.kpitelegrambot.bot.TelegramBot;
 import org.example.kpitelegrambot.bot.keyboards.InlineKeyboardFactory;
+import org.example.kpitelegrambot.googlesheets.KafkaProducer;
 import org.example.postgresql.data.EmployeeStatus;
 import org.example.postgresql.entity.Employee;
 import org.example.postgresql.service.EmployeeService;
@@ -22,7 +23,6 @@ public class UpdateHandler implements Handler {
     private final PrinterHandler printerHandler;
     private final PackerHandler packerHandler;
 
-
     public void register(TelegramBot telegramBot) {
         this.telegramBot = telegramBot;
     }
@@ -35,7 +35,6 @@ public class UpdateHandler implements Handler {
         sendMessage.setChatId(chatId);
         sendMessage.setText("Я не знаю такой команды \uD83E\uDD37");
         employee = employeeService.getEmployeeByChatId(chatId);
-
         if (text.equals("/forget_me")) {
             employeeService.deleteEmployeeByChatId(chatId);
             return forgetEmployeeProcess(sendMessage);
