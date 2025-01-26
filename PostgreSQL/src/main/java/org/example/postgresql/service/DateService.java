@@ -1,4 +1,4 @@
-package org.example.kpitelegrambot.service;
+package org.example.postgresql.service;
 
 import org.springframework.stereotype.Service;
 

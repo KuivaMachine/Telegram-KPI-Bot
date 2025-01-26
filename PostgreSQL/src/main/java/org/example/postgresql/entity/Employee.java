@@ -1,12 +1,13 @@
-package org.example.kpitelegrambot.DAO.entity;
+package org.example.postgresql.entity;
+
 
 
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.example.kpitelegrambot.data.DayNight;
-import org.example.kpitelegrambot.data.EmployeePost;
-import org.example.kpitelegrambot.data.EmployeeStatus;
+import org.example.postgresql.data.DayNight;
+import org.example.postgresql.data.EmployeePost;
+import org.example.postgresql.data.EmployeeStatus;
 
 @Getter
 @Setter
@@ -16,9 +17,10 @@ import org.example.kpitelegrambot.data.EmployeeStatus;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Employee {
+
     @Id
     @Column(name = "chat_id")
-    Long chatId;
+    long chatId;
 
     @Column(name = "FIO")
     String fio;
@@ -37,4 +39,5 @@ public class Employee {
     @Enumerated(EnumType.STRING)
     @Column(name = "work_time")
     DayNight workTime;
+
 }

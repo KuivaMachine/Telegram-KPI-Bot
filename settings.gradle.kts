@@ -1,4 +1,2 @@
 rootProject.name = "KPITelegramBot"
-include("GoogleSheetService")
-include("Dispatcher")
-
+include("GoogleSheetService","Dispatcher","PostgreSQL" )

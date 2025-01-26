@@ -1,14 +1,14 @@
 package org.example.kpitelegrambot.bot.handlers;
 
 import lombok.RequiredArgsConstructor;
-import org.example.kpitelegrambot.DAO.PostgreSQLController;
 import org.example.kpitelegrambot.bot.TelegramBot;
 import org.example.kpitelegrambot.bot.keyboards.ReplyKeyboardFactory;
 import org.example.kpitelegrambot.data.ButtonLabels;
-import org.example.kpitelegrambot.data.EmployeeStatus;
-import org.example.kpitelegrambot.DAO.entity.Employee;
-import org.example.kpitelegrambot.service.DateService;
-import org.example.kpitelegrambot.service.EmployeeService;
+import org.example.postgresql.data.EmployeeStatus;
+import org.example.postgresql.entity.Employee;
+import org.example.postgresql.service.DateService;
+import org.example.postgresql.service.EmployeeService;
+import org.example.postgresql.DAO.PostgreSQLController;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;

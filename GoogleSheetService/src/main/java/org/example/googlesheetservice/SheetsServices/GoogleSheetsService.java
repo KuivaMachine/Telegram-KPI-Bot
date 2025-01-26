@@ -3,7 +3,6 @@ package org.example.googlesheetservice.SheetsServices;
 
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.*;
-import lombok.extern.log4j.Log4j2;
 import org.example.googlesheetservice.Data.Months;
 import org.example.googlesheetservice.Data.PrinterStatistic;
 import org.example.googlesheetservice.Data.RowColumn;

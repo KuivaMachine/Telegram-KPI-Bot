@@ -1,14 +1,14 @@
-package org.example.kpitelegrambot.service.impl;
+package org.example.postgresql.service.impl;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.example.kpitelegrambot.data.DayNight;
-import org.example.kpitelegrambot.data.EmployeePost;
-import org.example.kpitelegrambot.data.EmployeeStatus;
-import org.example.kpitelegrambot.DAO.entity.Employee;
-import org.example.kpitelegrambot.DAO.entity.repository.EmployeeRepository;
-import org.example.kpitelegrambot.service.EmployeeService;
+import org.example.postgresql.data.DayNight;
+import org.example.postgresql.data.EmployeePost;
+import org.example.postgresql.data.EmployeeStatus;
+import org.example.postgresql.entity.Employee;
+import org.example.postgresql.entity.repository.EmployeeRepository;
+import org.example.postgresql.service.EmployeeService;
 import org.springframework.stereotype.Service;
 
 
@@ -17,7 +17,8 @@ import org.springframework.stereotype.Service;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class EmployeeServiceImpl implements EmployeeService {
 
-    EmployeeRepository employeeRepository;
+    private final EmployeeRepository employeeRepository;
+
     @Override
     public void save(Employee employee) {
         employeeRepository.save(employee);
@@ -25,7 +26,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public Employee getEmployeeByChatId(long id) {
-        return employeeRepository.findById(id).orElse(new Employee(null,null,null, EmployeeStatus.UNKNOWN_USER, EmployeePost.UNKNOWN, DayNight.UNKNOWN));
+        return employeeRepository.findById(id).orElse(new Employee(id,null,null, EmployeeStatus.UNKNOWN_USER, EmployeePost.UNKNOWN, DayNight.UNKNOWN));
     }
 
     @Override

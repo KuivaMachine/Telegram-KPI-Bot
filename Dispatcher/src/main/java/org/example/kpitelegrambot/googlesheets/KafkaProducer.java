@@ -1,8 +1,7 @@
 package org.example.kpitelegrambot.googlesheets;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.example.kpitelegrambot.DAO.entity.PrinterStatistic;
+import org.example.postgresql.entity.PrinterStatistic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
