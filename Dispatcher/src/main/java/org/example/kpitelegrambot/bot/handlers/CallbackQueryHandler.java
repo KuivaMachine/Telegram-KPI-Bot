@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.kpitelegrambot.bot.keyboards.InlineKeyboardFactory;
 import org.example.kpitelegrambot.bot.keyboards.ReplyKeyboardFactory;
 import org.example.kpitelegrambot.data.ButtonLabels;
+import org.example.kpitelegrambot.data.KafkaCommands;
 import org.example.postgresql.data.DayNight;
 import org.example.postgresql.data.EmployeePost;
 import org.example.postgresql.data.EmployeeStatus;
@@ -103,6 +104,7 @@ public class CallbackQueryHandler implements Handler {
         currentEmployee.setJob(EmployeePost.PRINTER);
         currentEmployee.setStatus(EmployeeStatus.SAVED);
         employeeService.save(currentEmployee);
+        kafkaProducer.send("commands", "UPDATE");
         sendMessage.setText("""
                 Отлично 👍 Чтобы записать статистику,\s
                 нажмите «Добавить статистику»

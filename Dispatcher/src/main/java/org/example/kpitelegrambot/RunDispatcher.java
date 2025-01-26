@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Import;
 @EnableConfigurationProperties({TelegramBotConfig.class})
 @ComponentScan(basePackages = {
         "org.example.postgresql","org.example.kpitelegrambot"})
-@Import(PostgresConfig.class)
+
 public class RunDispatcher {
 
     public static void main(String[] args) {

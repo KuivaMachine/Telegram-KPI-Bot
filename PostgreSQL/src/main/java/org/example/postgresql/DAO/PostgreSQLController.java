@@ -6,11 +6,9 @@ import org.example.postgresql.service.DateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
 
-import javax.sql.DataSource;
-import java.sql.*;
+import java.sql.Date;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Random;
@@ -21,7 +19,7 @@ public class PostgreSQLController {
 
 
     private final JdbcTemplate jdbcTemplate;
-   /// private final DataSource dataSource;
+
 
     @Autowired
     public PostgreSQLController(JdbcTemplate jdbcTemplate) {
