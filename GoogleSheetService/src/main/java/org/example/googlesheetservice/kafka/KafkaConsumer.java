@@ -29,17 +29,18 @@ public class KafkaConsumer {
 
     @KafkaListener(topics = "printer_stat_topic", groupId = "kpi_mhc")
     public void receive(ConsumerRecord<String, String> record, Acknowledgment ack) {
+        ack.acknowledge();
         PrinterStatistic statistic;
         try {
             statistic = objectMapper.readValue(record.value(), PrinterStatistic.class);
             googleSheetsService.addPrinterStatistic(statistic);
             log.info(statistic.toString());
-            ack.acknowledge();
-        } catch (JsonProcessingException e) {
+
+        } catch (Exception e) {
             log.error(String.format("Printer statistics had not been received, cause: %s", e.getMessage()));
         }
     }
-//ЭТА ХЕРНЯ САМА ПО СЕБЕ ОТПРАВЛЯЕТ UPDATE В КАФКУ
+
     @KafkaListener(topics = "commands", groupId = "kpi_mhc")
     @Transactional
     public void receiveCommand(ConsumerRecord<String, String> record, Acknowledgment ack) {
@@ -56,8 +57,7 @@ public class KafkaConsumer {
             System.out.println("Command " + command + " is already being processed.");
             return;
         }
-        CompletableFuture.runAsync(() -> {googleSheetsService.fullUpdateTable();
-                })
+        CompletableFuture.runAsync(() -> googleSheetsService.fullUpdateTable())
                 .exceptionally(ex -> {
                     // Обработка ошибок
                     log.warn("Error creating table: {}", ex.getMessage());

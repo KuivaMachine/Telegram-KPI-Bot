@@ -8,7 +8,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Controller;
 
-import java.sql.Date;
+import java.sql.*;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Random;
@@ -227,12 +227,13 @@ public class PostgreSQLController {
 
     public boolean isAddedPackerStatisticToday() {
         Date date = Date.valueOf(LocalDate.now());
-        String sql = "SELECT date_column FROM statistics_by_packers WHERE date_column = ?;";
-
-    /*    try (Connection connection = dataSource.getConnection()) {
+        String sql = String.format("SELECT date_column FROM statistics_by_packers WHERE date_column = '%s';", date);
+        log.error(sql);
+       /*try (Connection connection = dataSource.getConnection()) {
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
             preparedStatement.setDate(1, date);
             ResultSet resultSet = preparedStatement.executeQuery();
+            jdbcTemplate.
             if (resultSet.next()) {
                 resultSet.close();
                 preparedStatement.close();
@@ -240,7 +241,12 @@ public class PostgreSQLController {
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        }*/
+        }
+        return false;*/
         return false;
+    }
+
+    public List<PrinterStatistic> getAllPrinterStatistic(long chatId) {
+        return null;
     }
 }

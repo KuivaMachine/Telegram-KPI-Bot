@@ -87,9 +87,11 @@ public class CallbackQueryHandler implements Handler {
         nicePhrase = postgres.getNicePhraseToPrinter(currentEmployee);
         if (postgres.moveDataFromPrinterBufferToMainTable(currentEmployee)) {
             PrinterStatistic statistic = postgres.getLastAddedPrinterRecord(currentEmployee);
-            if(statistic!=null) {kafkaProducer.send("printer_stat_topic", statistic);
-            }else {
-                log.error(String.format("Couldn't send printer statistic %s | %s to Kafka :(", statistic.toString(), currentEmployee.getChatId()));
+            if (statistic != null) {
+                kafkaProducer.send("printer_stat_topic", statistic);
+                log.info(String.format("Отправил %s", statistic));
+            } else {
+                log.error(String.format("Couldn't send printer statistic | %s to Kafka :(", currentEmployee.getChatId()));
             }
         }
         currentEmployee.setStatus(EmployeeStatus.SAVED);
