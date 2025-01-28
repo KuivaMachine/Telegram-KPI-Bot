@@ -3,23 +3,20 @@ package org.example.googlesheetservice.SheetsServices;
 
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.*;
+import lombok.extern.log4j.Log4j2;
 import org.example.googlesheetservice.Data.Months;
 import org.example.googlesheetservice.Data.PrinterStatistic;
 import org.example.googlesheetservice.Data.RowColumn;
 import org.example.postgresql.DAO.PostgreSQLController;
 import org.example.postgresql.entity.Employee;
 import org.example.postgresql.service.EmployeeService;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.logging.Logger;
 
-
+@Log4j2
 @Component
 public class GoogleSheetsService {
 
@@ -30,7 +27,7 @@ public class GoogleSheetsService {
     private final EmployeeService employeeService;
     private final HashMap<Integer, String> labelNumsList = new HashMap<>();
     public final Sheets sheetService;
-    private final Logger log = Logger.getLogger(GoogleSheetsService.class.getName());
+
     private final String SPREADSHEET_ID = "1NpExJ1FOSxgpkPRFmR5q0lKCeIfD0vujReHkwynY_tY";
     private final int SHEET_ID = 1962952644;
     private final PostgreSQLController postgres;
@@ -267,8 +264,8 @@ public class GoogleSheetsService {
         setRowsOrColumnWidth(sheetService, RowColumn.COLUMNS, 340, 1, 2);
         //ШИРИНА 2-3 СТОЛБЦА 80
         setRowsOrColumnWidth(sheetService, RowColumn.COLUMNS, 80, 2, 4);
-        //ШИРИНА ОСТАЛЬНЫХ СТОЛБЦОВ 45
-        setRowsOrColumnWidth(sheetService, RowColumn.COLUMNS, 45, 4, 35);
+        //ШИРИНА ОСТАЛЬНЫХ СТОЛБЦОВ 50
+        setRowsOrColumnWidth(sheetService, RowColumn.COLUMNS, 50, 4, 35);
 
         //ФОРМАТ ВСЕЙ ТАБЛИЦЫ
         setCellStyle(sheetService, new GridRange().setSheetId(SHEET_ID)
@@ -426,6 +423,7 @@ public class GoogleSheetsService {
 
     public void addPrinterStatistic(PrinterStatistic statistic) {
         int rowNum = 0;
+        updateLabelList();
         for (Map.Entry<Integer, String> entry : labelNumsList.entrySet()) {
             if (entry.getValue().equals(statistic.getFio())) {
                 rowNum = entry.getKey();
@@ -433,21 +431,48 @@ public class GoogleSheetsService {
             }
         }
         if (rowNum != 0) {
-            getColumnLetter(statistic.getDate());
-           // updateData(String.format("%s%d", getColumnLetter(statistic.getDate()), rowNum), new ValueRange().setValues( List.of(List.of("%s/%s", statistic.getPrints_num(),statistic.getDefects_num()))));
+            updateData(String.format("%s%d", getColumnLetter(statistic.getDate()), rowNum), new ValueRange().setValues(List.of(List.of(String.format("%s/%s", statistic.getPrints_num(), statistic.getDefects_num())))));
+        } else {
+            log.error("Строка с пользователем не найдена в листе {}", labelNumsList);
         }
 
     }
 
     private String getColumnLetter(String date) {
-        String day = date.substring(8,9);
-        log.info(date);
-        log.info(day);
-        return switch (Integer.parseInt(day)){
-            case (1):
-                yield "A";
-            default:
-                throw new IllegalStateException("Unexpected value: " + Integer.parseInt(day));
+        String day = date.substring(8, 10);
+        return switch (Integer.parseInt(day)) {
+            case 1 -> "E";
+            case 2 -> "F";
+            case 3 -> "G";
+            case 4 -> "H";
+            case 5 -> "I";
+            case 6 -> "J";
+            case 7 -> "K";
+            case 8 -> "L";
+            case 9 -> "M";
+            case 10 -> "N";
+            case 11 -> "O";
+            case 12 -> "P";
+            case 13 -> "Q";
+            case 14 -> "R";
+            case 15 -> "S";
+            case 16 -> "T";
+            case 17 -> "U";
+            case 18 -> "V";
+            case 19 -> "W";
+            case 20 -> "X";
+            case 21 -> "Y";
+            case 22 -> "Z";
+            case 23 -> "AA";
+            case 24 -> "AB";
+            case 25 -> "AC";
+            case 26 -> "AD";
+            case 27 -> "AE";
+            case 28 -> "AF";
+            case 29 -> "AG";
+            case 30 -> "AH";
+            case 31 -> "AI";
+            default -> throw new IllegalStateException("Дата не была распознана: " + day);
         };
     }
 
@@ -455,13 +480,24 @@ public class GoogleSheetsService {
     public void fullUpdateTable() {
         List<Employee> dayPrintersList = employeeService.getListOfDayPrinters();
         List<Employee> nightPrintersList = employeeService.getListOfNightPrinters();
-        this.numberOfDayPrinters = dayPrintersList.size();
-        this.numberOfNightPrinters = nightPrintersList.size();
-        updateLabelList(dayPrintersList, nightPrintersList);
+        updateLabelList();
+        updatePrinterStatistic(dayPrintersList, nightPrintersList);
         createNewSheet();
     }
 
-    private void updateLabelList(List<Employee> dayPrintersList, List<Employee> nightPrintersList) {
+    private void updatePrinterStatistic(List<Employee> dayPrintersList, List<Employee> nightPrintersList) {
+        for (Employee employee : dayPrintersList) {
+           List<org.example.postgresql.entity.PrinterStatistic> dayList = postgres.getAllPrinterStatistic(employee.getChatId());
+        }
+    }
+
+
+    private void updateLabelList() {
+        List<Employee> dayPrintersList = employeeService.getListOfDayPrinters();
+        List<Employee> nightPrintersList = employeeService.getListOfNightPrinters();
+        this.numberOfDayPrinters = dayPrintersList.size();
+        this.numberOfNightPrinters = nightPrintersList.size();
+
         int dayKey = 8 + marketsNumber;
         int nightKey = 11 + marketsNumber + numberOfDayPrinters;
         for (int i = 5; i <= 5 + marketsNumber; i++) {
