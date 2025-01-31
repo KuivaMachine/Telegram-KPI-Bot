@@ -17,4 +17,12 @@ public class SheetId {
    private int sheetId;
     @Column(name = "title")
     String title;
+
+    @Override
+    public String toString() {
+        return "SheetId{" +
+                "sheetId=" + sheetId +
+                ", title='" + title + '\'' +
+                '}';
+    }
 }

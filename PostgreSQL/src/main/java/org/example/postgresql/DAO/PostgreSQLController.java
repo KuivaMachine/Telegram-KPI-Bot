@@ -46,13 +46,13 @@ public class PostgreSQLController {
 
     public void createNewStatisticTableIfNotExists(Employee currentEmployee) {
         String tableName = String.format("statistic_from_%s", currentEmployee.getChatId());
-        String sql = String.format("CREATE TABLE IF NOT EXISTS %s (id SERIAL PRIMARY KEY, date DATE, prints_num INT, defects_num INT);", tableName);
+        String sql = String.format("CREATE TABLE IF NOT EXISTS %s (id SERIAL PRIMARY KEY, date DATE UNIQUE, prints_num INT DEFAULT 0, defects_num INT DEFAULT 0);", tableName);
         makeSqlRequestByStatement(sql);
     }
 
     public void createNewStatisticBuffer(Employee currentEmployee) {
         String tableName = String.format("statistic_buffer_from_printer_%s", currentEmployee.getChatId());
-        String sql = String.format("CREATE TABLE IF NOT EXISTS %s (id SERIAL PRIMARY KEY, date DATE, prints_num INT, defects_num INT);", tableName);
+        String sql = String.format("CREATE TABLE IF NOT EXISTS %s (id SERIAL PRIMARY KEY, date DATE UNIQUE, prints_num INT DEFAULT 0, defects_num INT DEFAULT 0);", tableName);
         makeSqlRequestByStatement(sql);
     }
 
@@ -69,7 +69,9 @@ public class PostgreSQLController {
         String sql = String.format("BEGIN TRANSACTION; " +
                 "INSERT INTO %s (date, prints_num, defects_num) " +
                 "SELECT date, prints_num, defects_num " +
-                "FROM %s;" +
+                "FROM %s ON CONFLICT (date) DO UPDATE " +
+                "SET prints_num = EXCLUDED.prints_num, " +
+                "defects_num = EXCLUDED.defects_num; " +
                 "DROP TABLE %s;" +
                 "COMMIT;", mainTableName, bufferTableName, bufferTableName);
         return makeSqlRequestByStatement(sql);
@@ -190,13 +192,13 @@ public class PostgreSQLController {
 
     public void createNewPackerStatisticTableIfNotExists() {
         String tableName = "statistics_by_packers";
-        String sql = String.format("CREATE TABLE IF NOT EXISTS %s (date_column DATE PRIMARY KEY NOT NULL, wb_mhc INT, wb_signum INT, wb_silicosha INT, ozon INT, yandex INT, wb_printKid INT, fbo INT);", tableName);
+        String sql = String.format("CREATE TABLE IF NOT EXISTS %s (date_column DATE PRIMARY KEY NOT NULL, wb_mhc INT DEFAULT 0, wb_signum INT DEFAULT 0, wb_silicosha INT DEFAULT 0, ozon INT DEFAULT 0, yandex INT DEFAULT 0, wb_printKid INT DEFAULT 0, fbo INT DEFAULT 0);", tableName);
         makeSqlRequestByStatement(sql);
     }
 
     public void createNewPackerStatisticBuffer(Employee currentEmployee) {
         String bufferTableName = String.format("statistic_buffer_from_packer_%s", currentEmployee.getChatId());
-        String sql = String.format("CREATE TABLE IF NOT EXISTS %s (id SERIAL PRIMARY KEY NOT NULL, date_column DATE, wb_mhc INT, wb_signum INT, wb_silicosha INT, ozon INT, yandex INT, wb_printKid INT, fbo INT);", bufferTableName);
+        String sql = String.format("CREATE TABLE IF NOT EXISTS %s (id SERIAL PRIMARY KEY NOT NULL, date_column DATE PRIMARY KEY NOT NULL, wb_mhc INT DEFAULT 0, wb_signum INT DEFAULT 0, wb_silicosha INT DEFAULT 0, ozon INT DEFAULT 0, yandex INT DEFAULT 0, wb_printKid INT DEFAULT 0, fbo INT DEFAULT 0);", bufferTableName);
         makeSqlRequestByStatement(sql);
     }
 
@@ -247,4 +249,20 @@ public class PostgreSQLController {
     }
 
 
+
+    public List<PrinterStatistic> getPrinterStatisticByChatId(long chatId) {
+        /*String tableName = String.format("statistic_from_%s", currentEmployee.getChatId());
+        String getLastStatRequest = String.format("SELECT * " +
+                "FROM %s " +
+                "ORDER BY id DESC " +
+                "LIMIT 1;", tableName);
+        PrinterStatistic statistic = jdbcTemplate.queryForObject(getLastStatRequest, new PrinterStatisticMapper());
+        if (statistic != null) {
+            statistic.setFio(currentEmployee.getFio());
+            return statistic;
+        } else {
+            return null;
+        }*/
+        return null;
+    }
 }

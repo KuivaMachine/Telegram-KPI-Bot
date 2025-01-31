@@ -86,6 +86,8 @@ public class CallbackQueryHandler implements Handler {
         postgres.addValueInBufferFromPrinter(currentEmployee, dateService.parseStringToSqlDate(callback), "date");
         nicePhrase = postgres.getNicePhraseToPrinter(currentEmployee);
         if (postgres.moveDataFromPrinterBufferToMainTable(currentEmployee)) {
+            currentEmployee.setStatus(EmployeeStatus.SAVED);
+            employeeService.save(currentEmployee);
             PrinterStatistic statistic = postgres.getLastAddedPrinterRecord(currentEmployee);
             if (statistic != null) {
                 kafkaProducer.send("printer_stat_topic", statistic);
@@ -94,8 +96,6 @@ public class CallbackQueryHandler implements Handler {
                 log.error(String.format("Couldn't send printer statistic | %s to Kafka :(", currentEmployee.getChatId()));
             }
         }
-        currentEmployee.setStatus(EmployeeStatus.SAVED);
-        employeeService.save(currentEmployee);
         sendMessage.setText(String.format("Я все записал!\n%s", nicePhrase));
         sendMessage.setReplyMarkup(ReplyKeyboardFactory.getShowAndAddKeyboard());
         return sendMessage;

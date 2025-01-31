@@ -1,7 +1,6 @@
 package org.example.kpitelegrambot.googlesheets;
 
 import lombok.RequiredArgsConstructor;
-import org.example.kpitelegrambot.data.KafkaCommands;
 import org.example.postgresql.entity.PrinterStatistic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
