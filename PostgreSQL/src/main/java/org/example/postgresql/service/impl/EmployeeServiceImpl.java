@@ -23,7 +23,7 @@ import java.util.List;
 public class EmployeeServiceImpl implements EmployeeService {
 
     private static final Logger log = LoggerFactory.getLogger(EmployeeServiceImpl.class);
-    private final EmployeeRepository employeeRepository;
+    EmployeeRepository employeeRepository;
 
     @Override
     public void save(Employee employee) {

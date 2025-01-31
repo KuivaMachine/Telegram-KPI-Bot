@@ -481,15 +481,10 @@ public class GoogleSheetsService {
         List<Employee> dayPrintersList = employeeService.getListOfDayPrinters();
         List<Employee> nightPrintersList = employeeService.getListOfNightPrinters();
         updateLabelList();
-        updatePrinterStatistic(dayPrintersList, nightPrintersList);
+       // updatePrinterStatistic(dayPrintersList, nightPrintersList);
         createNewSheet();
     }
 
-    private void updatePrinterStatistic(List<Employee> dayPrintersList, List<Employee> nightPrintersList) {
-        for (Employee employee : dayPrintersList) {
-           List<org.example.postgresql.entity.PrinterStatistic> dayList = postgres.getAllPrinterStatistic(employee.getChatId());
-        }
-    }
 
 
     private void updateLabelList() {

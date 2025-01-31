@@ -246,7 +246,5 @@ public class PostgreSQLController {
         return false;
     }
 
-    public List<PrinterStatistic> getAllPrinterStatistic(long chatId) {
-        return null;
-    }
+
 }
