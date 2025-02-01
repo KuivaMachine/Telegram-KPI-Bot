@@ -77,7 +77,16 @@ public class PostgreSQLController {
         return makeSqlRequestByStatement(sql);
     }
 
-    public String getLastAddedPackerRecord() {
+    public PackerStatistic getLastAddedPackerRecord() {
+        String tableName = "statistics_by_packers";
+        String getLastStatRequest = String.format("SELECT * " +
+                "FROM %s " +
+                "ORDER BY date_column DESC " +
+                "LIMIT 1;", tableName);
+        return jdbcTemplate.queryForObject(getLastStatRequest, new PackerStatisticMapper());
+    }
+
+    public String getLastAddedPackerRecordToString() {
         String tableName = "statistics_by_packers";
         String getLastStatRequest = String.format("SELECT * " +
                 "FROM %s " +
@@ -198,7 +207,7 @@ public class PostgreSQLController {
 
     public void createNewPackerStatisticBuffer(Employee currentEmployee) {
         String bufferTableName = String.format("statistic_buffer_from_packer_%s", currentEmployee.getChatId());
-        String sql = String.format("CREATE TABLE IF NOT EXISTS %s (id SERIAL PRIMARY KEY NOT NULL, date_column DATE PRIMARY KEY NOT NULL, wb_mhc INT DEFAULT 0, wb_signum INT DEFAULT 0, wb_silicosha INT DEFAULT 0, ozon INT DEFAULT 0, yandex INT DEFAULT 0, wb_printKid INT DEFAULT 0, fbo INT DEFAULT 0);", bufferTableName);
+        String sql = String.format("CREATE TABLE IF NOT EXISTS %s (id SERIAL PRIMARY KEY NOT NULL, date_column DATE, wb_mhc INT DEFAULT 0, wb_signum INT DEFAULT 0, wb_silicosha INT DEFAULT 0, ozon INT DEFAULT 0, yandex INT DEFAULT 0, wb_printKid INT DEFAULT 0, fbo INT DEFAULT 0);", bufferTableName);
         makeSqlRequestByStatement(sql);
     }
 
@@ -214,7 +223,7 @@ public class PostgreSQLController {
         makeSqlRequestByStatement(sqlDropRequest);
     }
 
-    public void moveDataFromPackerBufferToMainTable(Employee currentEmployee) {
+    public boolean moveDataFromPackerBufferToMainTable(Employee currentEmployee) {
         String bufferTableName = String.format("statistic_buffer_from_packer_%s", currentEmployee.getChatId());
         String mainTableName = "statistics_by_packers";
         String sql = String.format("BEGIN TRANSACTION; " +
@@ -223,46 +232,30 @@ public class PostgreSQLController {
                 "FROM %s;" +
                 "DROP TABLE %s;" +
                 "COMMIT;", mainTableName, bufferTableName, bufferTableName);
-        makeSqlRequestByStatement(sql);
+        return makeSqlRequestByStatement(sql);
     }
 
 
     public boolean isAddedPackerStatisticToday() {
         Date date = Date.valueOf(LocalDate.now());
-        String sql = String.format("SELECT date_column FROM statistics_by_packers WHERE date_column = '%s';", date);
-        log.error(sql);
-       /*try (Connection connection = dataSource.getConnection()) {
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            preparedStatement.setDate(1, date);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            jdbcTemplate.
-            if (resultSet.next()) {
-                resultSet.close();
-                preparedStatement.close();
-                return true;
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return false;*/
-        return false;
+        String sql = String.format("SELECT 1 FROM statistics_by_packers WHERE date_column = '%s';", date);
+        return makeSelectRequest(sql).equals(List.of("1"));
+
     }
 
 
-
     public List<PrinterStatistic> getPrinterStatisticByChatId(long chatId) {
-        /*String tableName = String.format("statistic_from_%s", currentEmployee.getChatId());
-        String getLastStatRequest = String.format("SELECT * " +
-                "FROM %s " +
-                "ORDER BY id DESC " +
-                "LIMIT 1;", tableName);
-        PrinterStatistic statistic = jdbcTemplate.queryForObject(getLastStatRequest, new PrinterStatisticMapper());
-        if (statistic != null) {
-            statistic.setFio(currentEmployee.getFio());
-            return statistic;
-        } else {
+        String tableName = String.format("statistic_from_%s", chatId);
+        String doesTableExistRequest = String.format("SELECT 1 FROM information_schema.tables WHERE table_name = '%s'", tableName);
+        if (!makeSelectRequest(doesTableExistRequest).equals(List.of("1"))) {
+            log.info("ТАБЛИЦЫ НЕТ");
             return null;
-        }*/
-        return null;
+        } else {
+            log.info("ТАБЛИЦА ЕСТЬ");
+            LocalDate date = LocalDate.now();
+            String selectStatRequest = String.format("SELECT * FROM %s WHERE date >= '%s' AND date <= '%s';", tableName, date.minusDays(date.getDayOfMonth() - 1), date);
+            log.error(selectStatRequest);
+            return jdbcTemplate.query(selectStatRequest, new PrinterStatisticMapper());
+        }
     }
 }

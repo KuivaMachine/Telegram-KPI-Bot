@@ -9,13 +9,13 @@ import org.example.googlesheetservice.Data.PrinterStatistic;
 import org.example.googlesheetservice.Data.RowColumn;
 import org.example.postgresql.DAO.PostgreSQLController;
 import org.example.postgresql.entity.Employee;
+import org.example.postgresql.entity.PackerStatistic;
 import org.example.postgresql.entity.SheetId;
 import org.example.postgresql.service.EmployeeService;
 import org.example.postgresql.service.SheetIdService;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -113,7 +113,7 @@ public class GoogleSheetsService {
         int length = 7 + random.nextInt(5); // 7 + (0..4) = 7..11
         int min = (int) Math.pow(10, length - 1); // Минимальное значение для длины
         int max = (int) Math.pow(10, length) - 1; // Максимальное значение для длины
-        return min + random.nextInt() % (max - min + 1);
+        return min + random.nextInt(max - min + 1);
     }
 
     public SheetId createNewSheet() {
@@ -122,12 +122,13 @@ public class GoogleSheetsService {
         //ЕСЛИ ТАБЛИЦА С ТАКИМ НАЗВАНИЕМ УЖЕ ЕСТЬ
         int currentSheetId = findSheetIdByTitle(sheetTitle);
         if (currentSheetId != -1) {
-            log.info("ТАБЛИЦА С ТАКИМ НАЗВАНИЕМ УЖЕ ЕСТЬ "+sheetTitle);
+            log.info("ТАБЛИЦА С ТАКИМ НАЗВАНИЕМ УЖЕ ЕСТЬ " + sheetTitle);
             sheetIdService.saveSheetId(new SheetId(currentSheetId, sheetTitle));
             return new SheetId(currentSheetId, sheetTitle);
         }
 
         int sheetId = generateSheetId();
+        log.info("SHEET ID = " + sheetId);
         AddSheetRequest addSheetViewRequest = new AddSheetRequest()
                 .setProperties(new SheetProperties()
                         .setTitle(sheetTitle)
@@ -140,6 +141,7 @@ public class GoogleSheetsService {
         try {
             sheetService.spreadsheets().batchUpdate(SPREADSHEET_ID, batchUpdateRequest).execute();
             sheetIdService.saveSheetId(new SheetId(sheetId, sheetTitle));
+            log.info(String.format("СОЗДАЛ И СОХРАНИЛ НОВУЮ ТАБЛИЦУ: Title %s, SheetId %d", sheetTitle, sheetId));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -446,6 +448,81 @@ public class GoogleSheetsService {
         int blue = Integer.parseInt(hex.substring(5, 7), 16);
         return new Color().setRed(red / 255f).setGreen(green / 255f).setBlue(blue / 255f);
     }
+    private void updateLabelList() {
+        List<Employee> dayPrintersList = employeeService.getListOfDayPrinters();
+        List<Employee> nightPrintersList = employeeService.getListOfNightPrinters();
+        this.numberOfDayPrinters = dayPrintersList.size();
+        this.numberOfNightPrinters = nightPrintersList.size();
+
+        int dayKey = 8 + marketsNumber;
+        int nightKey = 11 + marketsNumber + numberOfDayPrinters;
+        for (int i = 5; i <= 5 + marketsNumber; i++) {
+            switch (i) {
+                case 5:
+                    labelNumsList.put(i, "WB MHC");
+                    break;
+                case 6:
+                    labelNumsList.put(i, "WB Signum");
+                    break;
+                case 7:
+                    labelNumsList.put(i, "WB Silicosha");
+                    break;
+                case 8:
+                    labelNumsList.put(i, "OZON MHC");
+                    break;
+                case 9:
+                    labelNumsList.put(i, "Yandex MHC");
+                    break;
+                case 10:
+                    labelNumsList.put(i, "WB PrintKid");
+                    break;
+                case 11:
+                    labelNumsList.put(i, "FBO");
+                    break;
+            }
+        }
+
+        for (Employee employee : dayPrintersList) {
+            labelNumsList.put(dayKey, employee.getFio());
+            dayKey++;
+        }
+
+        for (Employee employee : nightPrintersList) {
+            labelNumsList.put(nightKey, employee.getFio());
+            nightKey++;
+        }
+    }
+    public void addPackerStatistic(SheetId sheetId, PackerStatistic statistic) {
+        updateLabelList();
+        for (Map.Entry<Integer, String> entry : labelNumsList.entrySet()) {
+            if (entry.getValue().equals("WB MHC")){
+                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate_column()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getWb_mhc()))));
+            }
+            if (entry.getValue().equals("WB Signum")){
+                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate_column()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getWb_signum()))));
+
+            }
+            if (entry.getValue().equals("WB Silicosha")){
+                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate_column()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getWb_silicosha()))));
+
+            }
+            if (entry.getValue().equals("OZON MHC")){
+                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate_column()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getOzon()))));
+
+            }
+            if (entry.getValue().equals("Yandex MHC")){
+                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate_column()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getYandex()))));
+
+            }
+            if (entry.getValue().equals("WB PrintKid")){
+                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate_column()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getWb_printkid()))));
+
+            }
+            if (entry.getValue().equals("FBO")){
+                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate_column()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getFbo()))));
+            }
+        }
+    }
 
     public void addPrinterStatistic(SheetId sheetId, PrinterStatistic statistic) {
         int rowNum = 0;
@@ -508,64 +585,33 @@ public class GoogleSheetsService {
         List<Employee> nightPrintersList = employeeService.getListOfNightPrinters();
         updateLabelList();
         updateTable(sheetId);
-        //updateAllStatistic(sheetId, dayPrintersList, nightPrintersList);
+        updateAllStatistic(sheetId, dayPrintersList, nightPrintersList);
     }
 
-    private void updateAllStatistic(SheetId sheetId,  List<Employee> dayPrintersList, List<Employee> nightPrintersList) {
-        for (Employee employee : dayPrintersList) {
+    private void updateAllStatistic(SheetId sheetId, List<Employee> dayPrintersList, List<Employee> nightPrintersList) {
+        updatePrinterStatistic(sheetId, dayPrintersList);
+        updatePrinterStatistic(sheetId, nightPrintersList);
+        //updatePackerStatistic(sheetId, dayPrintersList);
+    }
+
+    private void updatePrinterStatistic(SheetId sheetId, List<Employee> printersList) {
+        for (Employee employee : printersList) {
             for (Map.Entry<Integer, String> entry : labelNumsList.entrySet()) {
                 if (entry.getValue().equals(employee.getFio())) {
                     int rowNum = entry.getKey();
-                  //  List<PrinterStatistic> stat_list = postgres.getPrinterStatisticByChatId(employee.getChatId());
-
+                    List<org.example.postgresql.entity.PrinterStatistic> stat_list = postgres.getPrinterStatisticByChatId(employee.getChatId());
+                    if (stat_list != null) {
+                        for (org.example.postgresql.entity.PrinterStatistic statistic : stat_list) {
+                            updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), rowNum), new ValueRange().setValues(List.of(List.of(String.format("%s/%s", statistic.getPrints_num(), statistic.getDefects_num())))));
+                        }
+                    }
                 }
             }
         }
     }
 
 
-    private void updateLabelList() {
-        List<Employee> dayPrintersList = employeeService.getListOfDayPrinters();
-        List<Employee> nightPrintersList = employeeService.getListOfNightPrinters();
-        this.numberOfDayPrinters = dayPrintersList.size();
-        this.numberOfNightPrinters = nightPrintersList.size();
 
-        int dayKey = 8 + marketsNumber;
-        int nightKey = 11 + marketsNumber + numberOfDayPrinters;
-        for (int i = 5; i <= 5 + marketsNumber; i++) {
-            switch (i) {
-                case 5:
-                    labelNumsList.put(i, "WB MHC");
-                    break;
-                case 6:
-                    labelNumsList.put(i, "WB Signum");
-                    break;
-                case 7:
-                    labelNumsList.put(i, "WB Silicosha");
-                    break;
-                case 8:
-                    labelNumsList.put(i, "OZON MHC");
-                    break;
-                case 9:
-                    labelNumsList.put(i, "Yandex MHC");
-                    break;
-                case 10:
-                    labelNumsList.put(i, "WB PrintKid");
-                    break;
-                case 11:
-                    labelNumsList.put(i, "FBO");
-                    break;
-            }
-        }
 
-        for (Employee employee : dayPrintersList) {
-            labelNumsList.put(dayKey, employee.getFio());
-            dayKey++;
-        }
 
-        for (Employee employee : nightPrintersList) {
-            labelNumsList.put(nightKey, employee.getFio());
-            nightKey++;
-        }
-    }
 }
