@@ -20,7 +20,7 @@ public class ScheduleManager {
     private final GoogleSheetsService googleSheetsService;
 
 
-    @Scheduled(cron = "1 * * * * *")
+    @Scheduled(cron = "0 0 0 1 * ?")
     public void doWork() {
         LocalDate today = LocalDate.now();
         SheetId sheetId = googleSheetsService.createNewSheet();

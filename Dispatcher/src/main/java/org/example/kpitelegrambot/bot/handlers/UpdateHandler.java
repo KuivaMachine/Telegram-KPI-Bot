@@ -22,7 +22,6 @@ public class UpdateHandler implements Handler {
     TelegramBot telegramBot;
     private final PrinterHandler printerHandler;
     private final PackerHandler packerHandler;
-    private final KafkaProducer kafkaProducer;
 
     public void register(TelegramBot telegramBot) {
         this.telegramBot = telegramBot;
@@ -34,13 +33,14 @@ public class UpdateHandler implements Handler {
         String text = update.getMessage().getText();
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
-        //kafkaProducer.send("commands", "UPDATE");
         sendMessage.setText("Я не знаю такой команды \uD83E\uDD37");
         employee = employeeService.getEmployeeByChatId(chatId);
+
         if (text.equals("/forget_me")) {
             employeeService.deleteEmployeeByChatId(chatId);
             return forgetEmployeeProcess(sendMessage);
         }
+
         return (switch (employee.getJob()) {
             case PACKER -> packerHandler.process(telegramBot, update, employee, sendMessage);
             case PRINTER -> printerHandler.process(telegramBot, update, employee, sendMessage);

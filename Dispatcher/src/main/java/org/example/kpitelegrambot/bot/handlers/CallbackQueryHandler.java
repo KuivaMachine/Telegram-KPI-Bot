@@ -1,30 +1,28 @@
 package org.example.kpitelegrambot.bot.handlers;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.example.kpitelegrambot.bot.keyboards.InlineKeyboardFactory;
 import org.example.kpitelegrambot.bot.keyboards.ReplyKeyboardFactory;
 import org.example.kpitelegrambot.data.ButtonLabels;
-import org.example.kpitelegrambot.data.KafkaCommands;
+import org.example.kpitelegrambot.googlesheets.KafkaProducer;
+import org.example.postgresql.DAO.PostgreSQLController;
 import org.example.postgresql.data.DayNight;
 import org.example.postgresql.data.EmployeePost;
 import org.example.postgresql.data.EmployeeStatus;
-import org.example.kpitelegrambot.googlesheets.KafkaProducer;
-import org.example.postgresql.service.EmployeeService;
 import org.example.postgresql.entity.Employee;
 import org.example.postgresql.entity.PrinterStatistic;
 import org.example.postgresql.service.DateService;
-import org.example.postgresql.DAO.PostgreSQLController;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.example.postgresql.service.EmployeeService;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
+@Log4j2
 @Component
 @RequiredArgsConstructor
 public class CallbackQueryHandler implements Handler {
 
-    private static final Logger log = LoggerFactory.getLogger(CallbackQueryHandler.class);
     private final EmployeeService employeeService;
     private final PostgreSQLController postgres;
     private final KafkaProducer kafkaProducer;
@@ -36,7 +34,6 @@ public class CallbackQueryHandler implements Handler {
         Long chatId = update.getCallbackQuery().getMessage().getChatId();
         String callback = update.getCallbackQuery().getData();
         SendMessage sendMessage = new SendMessage();
-
         currentEmployee = employeeService.getEmployeeByChatId(chatId);
 
         sendMessage.setChatId(chatId);
@@ -89,15 +86,15 @@ public class CallbackQueryHandler implements Handler {
             currentEmployee.setStatus(EmployeeStatus.SAVED);
             employeeService.save(currentEmployee);
             PrinterStatistic statistic = postgres.getLastAddedPrinterRecord(currentEmployee);
+            sendMessage.setText(String.format("Я все записал!\n%s", nicePhrase));
             if (statistic != null) {
                 kafkaProducer.send("printer_stat_topic", statistic);
-                log.info(String.format("Отправил %s", statistic));
             } else {
-                log.error(String.format("Couldn't send printer statistic | %s to Kafka :(", currentEmployee.getChatId()));
+                log.error(String.format("НЕ ПОЛУЧИЛОСЬ ВЕРНУТЬ ПОСЛЕДНЮЮ ДОБАВЛЕННУЮ СТАТИСТИКУ У ПОЛЬЗОВАТЕЛЯ %s", currentEmployee.getChatId()));
             }
+        }else{
+            sendMessage.setText("У меня не очень получилось записать :(\nМожет, попробовать еще раз?");
         }
-        sendMessage.setText(String.format("Я все записал!\n%s", nicePhrase));
-        sendMessage.setReplyMarkup(ReplyKeyboardFactory.getShowAndAddKeyboard());
         return sendMessage;
     }
 

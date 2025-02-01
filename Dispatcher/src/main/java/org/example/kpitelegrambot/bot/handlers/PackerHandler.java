@@ -1,11 +1,14 @@
 package org.example.kpitelegrambot.bot.handlers;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.example.kpitelegrambot.bot.TelegramBot;
 import org.example.kpitelegrambot.bot.keyboards.ReplyKeyboardFactory;
 import org.example.kpitelegrambot.data.ButtonLabels;
+import org.example.kpitelegrambot.googlesheets.KafkaProducer;
 import org.example.postgresql.data.EmployeeStatus;
 import org.example.postgresql.entity.Employee;
+import org.example.postgresql.entity.PackerStatistic;
 import org.example.postgresql.service.DateService;
 import org.example.postgresql.service.EmployeeService;
 import org.example.postgresql.DAO.PostgreSQLController;
@@ -13,12 +16,14 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
+@Log4j2
 @Component
 @RequiredArgsConstructor
 public class PackerHandler implements JobHandler {
     private final EmployeeService employeeService;
     private final PostgreSQLController postgres;
     private final DateService dateService;
+    private final KafkaProducer kafkaProducer;
 
     @Override
     public SendMessage process(TelegramBot telegramBot, Update update, Employee currentEmployee, SendMessage sendMessage) {
@@ -97,6 +102,9 @@ public class PackerHandler implements JobHandler {
     }
 
     public SendMessage sayHelloProcess(SendMessage sendMessage, Employee currentEmployee) {
+        postgres.deletePackerBuffer(currentEmployee);
+        currentEmployee.setStatus(EmployeeStatus.SAVED);
+        employeeService.save(currentEmployee);
         String[] fio = currentEmployee.getFio().split(" ");
         sendMessage.setText(String.format("Привет, %s! \nДобавим новую статистику?)", fio[1]));
         sendMessage.setReplyMarkup(ReplyKeyboardFactory.getAddStatKeyboard());
@@ -111,11 +119,21 @@ public class PackerHandler implements JobHandler {
     private SendMessage fillFboNumberProcess(SendMessage sendMessage, Employee currentEmployee, String fbo) {
         postgres.addValueInBufferFromPacker(currentEmployee, Integer.parseInt(fbo), "fbo");
         postgres.addValueInBufferFromPacker(currentEmployee, dateService.getLocalDate(), "date_column");
-        String nicePhrase = postgres.getNicePhrase();
-        postgres.moveDataFromPackerBufferToMainTable(currentEmployee);
-        currentEmployee.setStatus(EmployeeStatus.SAVED);
-        employeeService.save(currentEmployee);
-        sendMessage.setText(String.format("Я все записал!\n%s", nicePhrase));
+        if (postgres.moveDataFromPackerBufferToMainTable(currentEmployee)) {
+            String nicePhrase = postgres.getNicePhrase();
+            currentEmployee.setStatus(EmployeeStatus.SAVED);
+            employeeService.save(currentEmployee);
+            sendMessage.setText(String.format("Я все записал!\n%s", nicePhrase));
+            PackerStatistic statistic = postgres.getLastAddedPackerRecord();
+            if (statistic != null) {
+                kafkaProducer.send("packer_stat_topic", statistic);
+            } else {
+                log.error(String.format("НЕ ПОЛУЧИЛОСЬ ВЕРНУТЬ ПОСЛЕДНЮЮ ДОБАВЛЕННУЮ СТАТИСТИКУ СБОРЩИКА ПО ЗАПРОСУ ПОЛЬЗОВАТЕЛЯ %s", currentEmployee.getFio()));
+            }
+        } else {
+            sendMessage.setText("У меня не очень получилось записать :(\nМожет, попробовать еще раз?");
+        }
+
         sendMessage.setReplyMarkup(ReplyKeyboardFactory.getShowAndAddKeyboard());
         return sendMessage;
     }
@@ -187,7 +205,7 @@ public class PackerHandler implements JobHandler {
     }
 
     public SendMessage showLastRecord(Employee currentEmployee, SendMessage sendMessage) {
-        sendMessage.setText(postgres.getLastAddedPackerRecord());
+        sendMessage.setText(postgres.getLastAddedPackerRecordToString());
         return sendMessage;
     }
 

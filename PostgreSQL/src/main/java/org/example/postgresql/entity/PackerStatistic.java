@@ -1,23 +1,48 @@
 package org.example.postgresql.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
-@FieldDefaults (level = AccessLevel.PRIVATE, makeFinal = true)
+
 @Getter
 @Setter
-@RequiredArgsConstructor
 public class PackerStatistic {
-    String date_column;
-    String wb_mhc;
-    String wb_signum;
-    String wb_silicosha;
-    String ozon;
-    String yandex;
-    String wb_printkid;
-    String fbo;
+    private final String date_column;
+    private final String wb_mhc;
+    private final String wb_signum;
+    private final String wb_silicosha;
+    private final String ozon;
+    private final String yandex;
+    private final String wb_printkid;
+    private final String fbo;
+
+    public PackerStatistic(@JsonProperty("dateColumn") String dateColumn, @JsonProperty("wbMhc") String wbMhc, @JsonProperty("wbSignum") String wbSignum, @JsonProperty("wbSilicosha") String wbSilicosha, @JsonProperty("ozon") String ozon, @JsonProperty("yandex") String yandex, @JsonProperty("wbPrintkid") String wbPrintkid, @JsonProperty("fbo") String fbo) {
+        this.date_column = dateColumn;
+        this.wb_mhc = wbMhc;
+        this.wb_signum = wbSignum;
+        this.wb_silicosha = wbSilicosha;
+        this.ozon = ozon;
+        this.yandex = yandex;
+        this.wb_printkid = wbPrintkid;
+        this.fbo = fbo;
+    }
+
+    @Override
+    public String toString() {
+        return "PackerStatistic{" +
+                "date_column='" + date_column + '\'' +
+                ", wb_mhc='" + wb_mhc + '\'' +
+                ", wb_signum='" + wb_signum + '\'' +
+                ", wb_silicosha='" + wb_silicosha + '\'' +
+                ", ozon='" + ozon + '\'' +
+                ", yandex='" + yandex + '\'' +
+                ", wb_printkid='" + wb_printkid + '\'' +
+                ", fbo='" + fbo + '\'' +
+                '}';
+    }
 }

@@ -3,7 +3,9 @@ package org.example.googlesheetservice;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
+@EnableScheduling
 @SpringBootApplication
 @ComponentScan(basePackages = {"org.example.postgresql","org.example.googlesheetservice"})
 public class GoogleSheetServiceApplication {

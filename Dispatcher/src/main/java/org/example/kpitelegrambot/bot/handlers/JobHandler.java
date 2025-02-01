@@ -7,7 +7,6 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 
 public interface JobHandler{
     SendMessage process(TelegramBot bot, Update update, Employee employee, SendMessage message);
-    SendMessage cancelAddingStatistic(SendMessage sendMessage, Employee currentEmployee);
     SendMessage invalidNumberProcess(SendMessage sendMessage, String text);
     SendMessage showLastRecord(Employee currentEmployee, SendMessage sendMessage);
     SendMessage createNewStatisticPost(Employee currentEmployee, SendMessage sendMessage);

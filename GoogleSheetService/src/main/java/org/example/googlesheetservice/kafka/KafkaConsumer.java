@@ -7,6 +7,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.example.googlesheetservice.Data.KafkaCommands;
 import org.example.googlesheetservice.Data.PrinterStatistic;
 import org.example.googlesheetservice.StatisticHandler;
+import org.example.postgresql.entity.PackerStatistic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -27,13 +28,28 @@ public class KafkaConsumer {
 
 
     @KafkaListener(topics = "printer_stat_topic", groupId = "kpi_mhc")
-    public void receive(ConsumerRecord<String, String> record, Acknowledgment ack) {
+    public void receivePrinterStatistic(ConsumerRecord<String, String> record, Acknowledgment ack) {
         ack.acknowledge();
         PrinterStatistic statistic;
         try {
             statistic = objectMapper.readValue(record.value(), PrinterStatistic.class);
             log.info("ПРИНЯЛ СТАТИСТИКУ ПЕЧАТНИКА В БЛОКЕ @KafkaListener(topics = \"printer_stat_topic\", groupId = \"kpi_mhc\"): "+ statistic);
             statisticHandler.processPrinterStatistic(statistic);
+
+        } catch (Exception e) {
+            log.error(String.format("Printer statistics had not been received in @KafkaListener(topics = \"printer_stat_topic\", groupId = \"kpi_mhc\"), cause: %s", e.getMessage()));
+        }
+    }
+
+
+    @KafkaListener(topics = "packer_stat_topic", groupId = "kpi_mhc")
+    public void receivePackerStatistic(ConsumerRecord<String, String> record, Acknowledgment ack) {
+        ack.acknowledge();
+        PackerStatistic statistic;
+        try {
+            statistic = objectMapper.readValue(record.value(), PackerStatistic.class);
+            log.info("ПРИНЯЛ СТАТИСТИКУ СБОРЩИКА В БЛОКЕ @KafkaListener(topics = \"packer_stat_topic\", groupId = \"kpi_mhc\"): "+ statistic);
+            statisticHandler.processPackerStatistic(statistic);
 
         } catch (Exception e) {
             log.error(String.format("Printer statistics had not been received in @KafkaListener(topics = \"printer_stat_topic\", groupId = \"kpi_mhc\"), cause: %s", e.getMessage()));

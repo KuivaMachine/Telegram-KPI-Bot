@@ -14,6 +14,10 @@ public class KafkaConfiguration {
         return new NewTopic("printer_stat_topic", 2, (short) 1);
     }
     @Bean
+    public NewTopic createNewTopicPacker(){
+        return new NewTopic("packer_stat_topic", 2, (short) 1);
+    }
+    @Bean
     public NewTopic createNewTopicCommand(){
         return new NewTopic("commands", 2, (short) 1);
     }
