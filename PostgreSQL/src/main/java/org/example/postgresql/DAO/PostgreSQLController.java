@@ -190,12 +190,10 @@ public class PostgreSQLController {
     public String getNicePhrase() {
         String nicePhrase;
         Random random = new Random();
-        int randInt = random.nextInt(59) + 1;
+        int randInt = random.nextInt(60) + 1;
         String sqlGetRequest = String.format("SELECT (phrase) FROM nice_words WHERE id = %d;", randInt);
         List<String> result = makeSelectRequest(sqlGetRequest);
-
         nicePhrase = result.getFirst();
-
         return nicePhrase;
     }
 
@@ -256,6 +254,21 @@ public class PostgreSQLController {
             String selectStatRequest = String.format("SELECT * FROM %s WHERE date >= '%s' AND date <= '%s';", tableName, date.minusDays(date.getDayOfMonth() - 1), date);
             log.error(selectStatRequest);
             return jdbcTemplate.query(selectStatRequest, new PrinterStatisticMapper());
+        }
+    }
+
+    public List<PackerStatistic> getAllPackerStatistics() {
+        String tableName = "statistics_by_packers";
+        String doesTableExistRequest = String.format("SELECT 1 FROM information_schema.tables WHERE table_name = '%s'", tableName);
+        if (!makeSelectRequest(doesTableExistRequest).equals(List.of("1"))) {
+            log.info("ТАБЛИЦЫ НЕТ");
+            return null;
+        } else {
+            log.info("ТАБЛИЦА ЕСТЬ");
+            LocalDate date = LocalDate.now();
+            String selectStatRequest = String.format("SELECT * FROM %s WHERE date >= '%s' AND date <= '%s';", tableName, date.minusDays(date.getDayOfMonth() - 1), date);
+            log.error(selectStatRequest);
+            return jdbcTemplate.query(selectStatRequest, new PackerStatisticMapper());
         }
     }
 }

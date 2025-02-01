@@ -116,6 +116,7 @@ public class CallbackQueryHandler implements Handler {
         currentEmployee.setJob(EmployeePost.PACKER);
         currentEmployee.setStatus(EmployeeStatus.SAVED);
         employeeService.save(currentEmployee);
+        kafkaProducer.send("commands", "UPDATE");
         sendMessage.setText("""
                 Отлично 👍 Чтобы записать статистику,\s
                 нажмите «Добавить новую статистику»
