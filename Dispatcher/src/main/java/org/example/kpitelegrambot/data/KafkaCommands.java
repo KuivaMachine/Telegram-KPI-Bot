@@ -4,10 +4,6 @@ import lombok.Getter;
 
 @Getter
 public enum KafkaCommands {
-    UPDATE ;
-
-
-
-
+    UPDATE
 }
 

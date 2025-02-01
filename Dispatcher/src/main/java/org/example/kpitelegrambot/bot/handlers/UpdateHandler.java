@@ -3,7 +3,9 @@ package org.example.kpitelegrambot.bot.handlers;
 import lombok.RequiredArgsConstructor;
 import org.example.kpitelegrambot.bot.TelegramBot;
 import org.example.kpitelegrambot.bot.keyboards.InlineKeyboardFactory;
+import org.example.kpitelegrambot.data.AnswersList;
 import org.example.kpitelegrambot.googlesheets.KafkaProducer;
+import org.example.postgresql.data.EmployeePost;
 import org.example.postgresql.data.EmployeeStatus;
 import org.example.postgresql.entity.Employee;
 import org.example.postgresql.service.EmployeeService;
@@ -35,13 +37,23 @@ public class UpdateHandler implements Handler {
         sendMessage.setChatId(chatId);
         sendMessage.setText("Я не знаю такой команды \uD83E\uDD37");
         employee = employeeService.getEmployeeByChatId(chatId);
+        EmployeePost job = employee.getJob();
 
         if (text.equals("/forget_me")) {
             employeeService.deleteEmployeeByChatId(chatId);
             return forgetEmployeeProcess(sendMessage);
         }
+        if (text.equals("/help")) {
+            switch (job) {
+                case PRINTER -> sendMessage.setText(AnswersList.HELP_MESSAGE_PRINTER.getText());
+                case PACKER -> sendMessage.setText(AnswersList.HELP_MESSAGE_PACKER.getText());
+                case UNKNOWN -> sendMessage.setText(AnswersList.HELP_MESSAGE_UNKNOWN.getText());
+            }
+            sendMessage.setParseMode("HTML");
+            return sendMessage;
+        }
 
-        return (switch (employee.getJob()) {
+        return (switch (job) {
             case PACKER -> packerHandler.process(telegramBot, update, employee, sendMessage);
             case PRINTER -> printerHandler.process(telegramBot, update, employee, sendMessage);
             case UNKNOWN -> registrationProcess(sendMessage, employee, update);

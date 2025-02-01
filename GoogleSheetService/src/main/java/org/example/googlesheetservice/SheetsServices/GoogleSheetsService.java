@@ -583,15 +583,22 @@ public class GoogleSheetsService {
     public void fullUpdateTable(SheetId sheetId) {
         List<Employee> dayPrintersList = employeeService.getListOfDayPrinters();
         List<Employee> nightPrintersList = employeeService.getListOfNightPrinters();
+        List<PackerStatistic> packerStatisticList = postgres.getAllPackerStatistics();
         updateLabelList();
         updateTable(sheetId);
-        updateAllStatistic(sheetId, dayPrintersList, nightPrintersList);
+        updateAllStatistic(sheetId, dayPrintersList, nightPrintersList,packerStatisticList);
     }
 
-    private void updateAllStatistic(SheetId sheetId, List<Employee> dayPrintersList, List<Employee> nightPrintersList) {
+    private void updateAllStatistic(SheetId sheetId, List<Employee> dayPrintersList, List<Employee> nightPrintersList,List<PackerStatistic> packerStatisticList) {
         updatePrinterStatistic(sheetId, dayPrintersList);
         updatePrinterStatistic(sheetId, nightPrintersList);
-        //updatePackerStatistic(sheetId, dayPrintersList);
+        updatePackerStatistic(sheetId, packerStatisticList);
+    }
+
+    private void updatePackerStatistic(SheetId sheetId, List<PackerStatistic> packerStatisticList) {
+        for (PackerStatistic packerStatistic : packerStatisticList) {
+            addPackerStatistic(sheetId, packerStatistic);
+        }
     }
 
     private void updatePrinterStatistic(SheetId sheetId, List<Employee> printersList) {
