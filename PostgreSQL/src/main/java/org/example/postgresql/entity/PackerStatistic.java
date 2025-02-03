@@ -12,7 +12,7 @@ import lombok.experimental.FieldDefaults;
 @Getter
 @Setter
 public class PackerStatistic {
-    private final String date_column;
+    private final String date;
     private final String wb_mhc;
     private final String wb_signum;
     private final String wb_silicosha;
@@ -21,8 +21,8 @@ public class PackerStatistic {
     private final String wb_printkid;
     private final String fbo;
 
-    public PackerStatistic(@JsonProperty("dateColumn") String dateColumn, @JsonProperty("wbMhc") String wbMhc, @JsonProperty("wbSignum") String wbSignum, @JsonProperty("wbSilicosha") String wbSilicosha, @JsonProperty("ozon") String ozon, @JsonProperty("yandex") String yandex, @JsonProperty("wbPrintkid") String wbPrintkid, @JsonProperty("fbo") String fbo) {
-        this.date_column = dateColumn;
+    public PackerStatistic(@JsonProperty("date") String date, @JsonProperty("wbMhc") String wbMhc, @JsonProperty("wbSignum") String wbSignum, @JsonProperty("wbSilicosha") String wbSilicosha, @JsonProperty("ozon") String ozon, @JsonProperty("yandex") String yandex, @JsonProperty("wbPrintkid") String wbPrintkid, @JsonProperty("fbo") String fbo) {
+        this.date = date;
         this.wb_mhc = wbMhc;
         this.wb_signum = wbSignum;
         this.wb_silicosha = wbSilicosha;
@@ -35,7 +35,7 @@ public class PackerStatistic {
     @Override
     public String toString() {
         return "PackerStatistic{" +
-                "date_column='" + date_column + '\'' +
+                "date='" + date + '\'' +
                 ", wb_mhc='" + wb_mhc + '\'' +
                 ", wb_signum='" + wb_signum + '\'' +
                 ", wb_silicosha='" + wb_silicosha + '\'' +

@@ -40,14 +40,12 @@ public class GoogleSheetsConfig {
 
 
     private Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT) throws IOException {
-
         InputStream in = GoogleSheetServiceApplication.class.getResourceAsStream(CREDENTIALS_FILE_PATH);
         if (in == null) {
             throw new FileNotFoundException(String.format("Resource not found: %s", CREDENTIALS_FILE_PATH));
         }
         GoogleClientSecrets clientSecrets =
                 GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
-
         GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
                 HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, List.of(SheetsScopes.SPREADSHEETS))
                 .setDataStoreFactory(new FileDataStoreFactory(new java.io.File("tokens")))

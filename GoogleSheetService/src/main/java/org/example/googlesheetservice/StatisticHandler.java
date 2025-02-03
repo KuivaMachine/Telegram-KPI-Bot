@@ -26,50 +26,40 @@ public class StatisticHandler {
     private final GoogleSheetsService googleSheetsService;
 
     public void processPrinterStatistic(PrinterStatistic printerStatistic) {
-        var date = dateService.parseStringToLocalDate(printerStatistic.getDate(),"yyyy-MM-dd");
-        String month = Months.valueOf(date.getMonth().toString()).getTranslation();
-        SheetId sheetId = sheetIdService.findByTitle(String.format("Статистика KPI за %s %d", month, date.getYear()));
+        String sheetName = googleSheetsService.getHeaderTitle(dateService.parseStringToLocalDate(printerStatistic.getDate(), "yyyy-MM-dd"));
+        SheetId sheetId = sheetIdService.findByTitle(sheetName);
+        log.info(String.format("ОБРАБАТЫВАЕТСЯ ЗАПРОС НА ВСТАВКУ СТАТИСТИКИ ПЕЧАТНИКА %s в таблицу '%s'", printerStatistic.getFio(), sheetName));
         if (sheetId != null) {
             googleSheetsService.addPrinterStatistic(sheetId, printerStatistic);
-            log.info("БЫЛА ДОБАВЛЕНА Printer statistic: {}", printerStatistic);
-        }else{
-            log.info("SheetId = NULL, sheetIdService не нашел его в таблице");
-            sheetId = googleSheetsService.createNewSheet();
+        } else {
+            log.info(String.format("ID ТАБЛИЦЫ '%s' НЕ БЫЛО НАЙДЕНО, ОБРАБАТЫВАЕТСЯ ЗАПРОС НА СОЗДАНИЕ И ПОЛНОЕ ОБНОВЛЕНИЕ ТАБЛИЦЫ", sheetName));
+            sheetId = googleSheetsService.createNewSheet(sheetName);
             googleSheetsService.fullUpdateTable(sheetId);
-            googleSheetsService.addPrinterStatistic(sheetId, printerStatistic);
-            log.info("СОЗДАЛ НОВЫЙ ЛИСТ И ЗАПОЛНИЛ ЕГО");
         }
     }
 
     public void processPackerStatistic(PackerStatistic statistic) {
-        var date = dateService.parseStringToLocalDate(statistic.getDate_column(),"yyyy-MM-dd");
-        String month = Months.valueOf(date.getMonth().toString()).getTranslation();
-        SheetId sheetId = sheetIdService.findByTitle(String.format("Статистика KPI за %s %d", month, date.getYear()));
+        String sheetName = googleSheetsService.getHeaderTitle(dateService.parseStringToLocalDate(statistic.getDate(), "yyyy-MM-dd"));
+        SheetId sheetId = sheetIdService.findByTitle(sheetName);
+        log.info(String.format("ОБРАБАТЫВАЕТСЯ ЗАПРОС НА ВСТАВКУ СТАТИСТИКИ СБОРЩИКА В ТАБЛИЦУ '%s' В ДАТУ %s", sheetName, statistic.getDate()));
         if (sheetId != null) {
             googleSheetsService.addPackerStatistic(sheetId, statistic);
-            log.info("БЫЛА ДОБАВЛЕНА СТАТИСТИКА СБОРЩИКА: {}", statistic);
-        }else{
-            log.info("SheetId = NULL, sheetIdService не нашел его в таблице");
-            sheetId = googleSheetsService.createNewSheet();
+        } else {
+            log.info(String.format("ID ТАБЛИЦЫ '%s' НЕ БЫЛО НАЙДЕНО, ОБРАБАТЫВАЕТСЯ ЗАПРОС НА СОЗДАНИЕ И ПОЛНОЕ ОБНОВЛЕНИЕ ТАБЛИЦЫ", sheetName));
+            sheetId = googleSheetsService.createNewSheet(sheetName);
             googleSheetsService.fullUpdateTable(sheetId);
-            googleSheetsService.addPackerStatistic(sheetId, statistic);
-            log.info("СОЗДАЛ НОВЫЙ ЛИСТ И ЗАПОЛНИЛ ЕГО");
         }
     }
 
     public void processUpdateTable() {
-        LocalDate date = LocalDate.now();
-        String month = Months.valueOf(date.getMonth().toString()).getTranslation();
-        SheetId sheetId = sheetIdService.findByTitle(String.format("Статистика KPI за %s %d", month, date.getYear()));
-        if(sheetId != null) {
-            log.info("ПОСТУПИЛА КОМАНДА ОБНОВЛЕНИЯ ТАБЛИЦЫ");
+        String sheetName = googleSheetsService.getHeaderTitle(LocalDate.now());
+        SheetId sheetId = sheetIdService.findByTitle(sheetName);
+        if (sheetId != null) {
             googleSheetsService.fullUpdateTable(sheetId);
-            log.info("ТАБЛИЦА ОБНОВЛЕНА");
-        }else{
-            log.info("SheetId = NULL, sheetIdService не нашел его в таблице");
-           sheetId = googleSheetsService.createNewSheet();
-           googleSheetsService.fullUpdateTable(sheetId);
-            log.info("СОЗДАЛ НОВЫЙ ЛИСТ И ЗАПОЛНИЛ ЕГО");
+        } else {
+            log.info(String.format("ID ТАБЛИЦЫ '%s' НЕ БЫЛО НАЙДЕНО, ОБРАБАТЫВАЕТСЯ ЗАПРОС НА СОЗДАНИЕ И ПОЛНОЕ ОБНОВЛЕНИЕ ТАБЛИЦЫ", sheetName));
+            sheetId = googleSheetsService.createNewSheet(sheetName);
+            googleSheetsService.fullUpdateTable(sheetId);
         }
     }
 }
