@@ -23,9 +23,10 @@ public class ScheduleManager {
     @Scheduled(cron = "0 0 0 1 * ?")
     public void doWork() {
         LocalDate today = LocalDate.now();
-        SheetId sheetId = googleSheetsService.createNewSheet();
+        String sheetName = googleSheetsService.getHeaderTitle(today);
+        SheetId sheetId = googleSheetsService.createNewSheet(sheetName);
+        log.info(String.format("СЕГОДНЯ %s, НАЧИНАЮ СОЗДАНИЕ НОВОЙ ТАБЛИЦЫ '%s'", today, sheetId.getTitle()));
         googleSheetsService.fullUpdateTable(sheetId);
-        log.info(String.format("It's %s, new sheet \"%s\" had been created", today, sheetId.getTitle()));
     }
 
 }

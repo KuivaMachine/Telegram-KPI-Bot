@@ -4,22 +4,15 @@ import lombok.RequiredArgsConstructor;
 import org.example.kpitelegrambot.bot.TelegramBot;
 import org.example.kpitelegrambot.bot.keyboards.InlineKeyboardFactory;
 import org.example.kpitelegrambot.bot.keyboards.ReplyKeyboardFactory;
+import org.example.kpitelegrambot.data.AnswersList;
 import org.example.kpitelegrambot.data.ButtonLabels;
 import org.example.postgresql.data.EmployeeStatus;
 import org.example.postgresql.entity.Employee;
 import org.example.postgresql.service.EmployeeService;
 import org.example.postgresql.DAO.PostgreSQLController;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
-
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-
-import static org.apache.kafka.common.requests.DeleteAclsResponse.log;
 
 @Component
 @RequiredArgsConstructor
@@ -27,14 +20,11 @@ public class PrinterHandler implements JobHandler {
 
     private final EmployeeService employeeService;
     private final PostgreSQLController postgres;
-    private Timer timer;
-    private TelegramBot tgbot;
 
     @Override
     public SendMessage process(TelegramBot telegramBot, Update update, Employee currentEmployee, SendMessage sendMessage) {
-        sendMessage.setText("Я не знаю такой команды A \uD83E\uDD37");
+        sendMessage.setText(AnswersList.PRINTER_INVALID_COMMAND.getText());
         String receivedMessage = update.getMessage().getText();
-this.tgbot = telegramBot;
         if (receivedMessage.equals("/start")) {
             return sayHelloProcess(sendMessage, currentEmployee);
         }
@@ -81,7 +71,7 @@ this.tgbot = telegramBot;
     }
 
     private SendMessage invalidDateProcess(SendMessage sendMessage) {
-        sendMessage.setText("Просто выберите дату Вашей смены)");
+        sendMessage.setText(AnswersList.INVALID_DATE.getText());
         return sendMessage;
     }
 
@@ -89,10 +79,7 @@ this.tgbot = telegramBot;
         postgres.deletePrinterBuffer(currentEmployee);
         currentEmployee.setStatus(EmployeeStatus.SAVED);
         employeeService.save(currentEmployee);
-        sendMessage.setText("""
-                Я все отменил 👍 Чтобы записать статистику,\s
-                нажмите «Добавить новую статистику»
-                """);
+        sendMessage.setText(AnswersList.CANCEL_MESSAGE.getText());
         sendMessage.setReplyMarkup(ReplyKeyboardFactory.getAddStatKeyboard());
         return sendMessage;
     }
@@ -109,7 +96,7 @@ this.tgbot = telegramBot;
 
     private SendMessage fillDefectsNumProcess(SendMessage sendMessage, Employee currentEmployee, String numberOfDefects) {
         postgres.addValueInBufferFromPrinter(currentEmployee, Integer.parseInt(numberOfDefects), "defects_num");
-        sendMessage.setText("Выберите дату Вашей смены \uD83D\uDCC5");
+        sendMessage.setText(AnswersList.DATE_CHOICE.getText());
         sendMessage.setReplyMarkup(InlineKeyboardFactory.getDateChoiceKeyboard());
         currentEmployee.setStatus(EmployeeStatus.WAITING_DATE);
         employeeService.save(currentEmployee);
@@ -120,20 +107,20 @@ this.tgbot = telegramBot;
         postgres.addValueInBufferFromPrinter(currentEmployee, Integer.parseInt(numberOfPrints), "prints_num");
         currentEmployee.setStatus(EmployeeStatus.WAITING_DEFECTS_NUM);
         employeeService.save(currentEmployee);
-        sendMessage.setText("А сколько у Вас было брака?");
+        sendMessage.setText(AnswersList.DEFECTS_NUM_REQUEST.getText());
         return sendMessage;
     }
 
     //ДОБАВИТЬ НОВУЮ СТАТИСТИКУ
     public SendMessage createNewStatisticPost(Employee currentEmployee, SendMessage sendMessage) {
         //СОЗДАТЬ НОВУЮ ТАБЛИЦУ(ЕСЛИ НЕ СОЗДАНА) И СОЗДАТЬ БУФЕР
-        postgres.createNewStatisticTableIfNotExists(currentEmployee);
-        postgres.createNewStatisticBuffer(currentEmployee);
+        postgres.createNewPrinterStatisticTableIfNotExists(currentEmployee);
+        postgres.createNewPrinterStatisticBuffer(currentEmployee);
         //СОХРАНИТЬ СТАТУС ОЖИДАНИЯ ЧИСЛА НАПЕЧАТАННОГО
         currentEmployee.setStatus(EmployeeStatus.WAITING_PRINTS_NUM);
         employeeService.save(currentEmployee);
         //ОТПРАВИТЬ СЛЕДУЮЩЕЕ СООБЩЕНИЕ И КЛАВИАТУРУ С ОТМЕНОЙ
-        sendMessage.setText("Сколько всего Вы напечатали?)");
+        sendMessage.setText(AnswersList.PRINTS_NUM_REQUEST.getText());
         sendMessage.setReplyMarkup(ReplyKeyboardFactory.getCancelKeyboard());
       /*  //УСТАНОВИТЬ ТАЙМЕР НА 1 ЧАС, ЧТОБЫ ОТМЕНИТЬ ДОБАВЛЕНИЕ, ЕСЛИ В ТЕЧЕНИИ ЧАСА НИЧЕГО НЕ ПРОИСХОДИТ
         if (timer != null && timer.purge() > 0) { // Проверяем, был ли уже создан таймер

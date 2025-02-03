@@ -16,7 +16,10 @@ import org.example.postgresql.service.SheetIdService;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.*;
 
 @Log4j2
@@ -29,7 +32,7 @@ public class GoogleSheetsService {
 
     private final EmployeeService employeeService;
     private final HashMap<Integer, String> labelNumsList = new HashMap<>();
-    public final Sheets sheetService;
+    private final Sheets sheetService;
 
     private final String SPREADSHEET_ID = "1NpExJ1FOSxgpkPRFmR5q0lKCeIfD0vujReHkwynY_tY";
     private final SheetIdService sheetIdService;
@@ -44,10 +47,8 @@ public class GoogleSheetsService {
 
 
     private int findSheetIdByTitle(String title) {
-        try {
-            Spreadsheet spreadsheet = sheetService.spreadsheets().get(SPREADSHEET_ID).execute();
+        try {Spreadsheet spreadsheet = sheetService.spreadsheets().get(SPREADSHEET_ID).execute();
             List<Sheet> sheets = spreadsheet.getSheets();
-
             for (Sheet sheet : sheets) {
                 if (title.equals(sheet.getProperties().getTitle())) {
                     log.info(String.valueOf(sheet.getProperties().getSheetId()));
@@ -55,12 +56,12 @@ public class GoogleSheetsService {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+           log.info("ОШИБКА В МЕТОДЕ findSheetIdByTitle() {}",e.getMessage());
         }
         return -1;
     }
 
-    public void updateData(String range, ValueRange data) {
+    private void updateData(String range, ValueRange data) {
         try {
             sheetService.spreadsheets().values().update(SPREADSHEET_ID, range, data)
                     .setValueInputOption("RAW")
@@ -70,20 +71,8 @@ public class GoogleSheetsService {
         }
     }
 
-    public void appendData(String range, ValueRange data) {
-        try {
-            sheetService.spreadsheets().values().append(SPREADSHEET_ID, range, data)
-                    .setValueInputOption("USER_ENTERED")
-                    .setInsertDataOption("INSERT_ROWS")
-                    .setIncludeValuesInResponse(true)
-                    .execute();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
-
-    public void setRowsOrColumnWidth(int SHEET_ID, RowColumn object, int width, int start, int end) {
+    private void setRowsOrColumnWidth(int SHEET_ID, RowColumn object, int width, int start, int end) {
         DimensionProperties properties = new DimensionProperties()
                 .setPixelSize(width);
 
@@ -116,19 +105,17 @@ public class GoogleSheetsService {
         return min + random.nextInt(max - min + 1);
     }
 
-    public SheetId createNewSheet() {
-        String sheetTitle = getHeaderTitle();
+    public SheetId createNewSheet(String sheetTitle) {
 
         //ЕСЛИ ТАБЛИЦА С ТАКИМ НАЗВАНИЕМ УЖЕ ЕСТЬ
         int currentSheetId = findSheetIdByTitle(sheetTitle);
         if (currentSheetId != -1) {
-            log.info("ТАБЛИЦА С ТАКИМ НАЗВАНИЕМ УЖЕ ЕСТЬ " + sheetTitle);
+            log.info(String.format("ТАБЛИЦА С НАЗВАНИЕМ '%s' УЖЕ ЕСТЬ. СОХРАНЯЮ ЕЕ ID",sheetTitle));
             sheetIdService.saveSheetId(new SheetId(currentSheetId, sheetTitle));
             return new SheetId(currentSheetId, sheetTitle);
         }
 
         int sheetId = generateSheetId();
-        log.info("SHEET ID = " + sheetId);
         AddSheetRequest addSheetViewRequest = new AddSheetRequest()
                 .setProperties(new SheetProperties()
                         .setTitle(sheetTitle)
@@ -141,14 +128,14 @@ public class GoogleSheetsService {
         try {
             sheetService.spreadsheets().batchUpdate(SPREADSHEET_ID, batchUpdateRequest).execute();
             sheetIdService.saveSheetId(new SheetId(sheetId, sheetTitle));
-            log.info(String.format("СОЗДАЛ И СОХРАНИЛ НОВУЮ ТАБЛИЦУ: Title %s, SheetId %d", sheetTitle, sheetId));
+            log.info(String.format("СОЗДАЛ И СОХРАНИЛ НОВУЮ ТАБЛИЦУ '%s', C ID %d", sheetTitle, sheetId));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
         return new SheetId(sheetId, sheetTitle);
     }
 
-    public String createNewSpreadSheet(String title) {
+    private String createNewSpreadSheet(String title) {
         Spreadsheet newTable = new Spreadsheet()
                 .setProperties(new SpreadsheetProperties().setTitle(title));
         try {
@@ -190,7 +177,7 @@ public class GoogleSheetsService {
         }
     }
 
-    public void mergeCells(GridRange range) {
+    private void mergeCells(GridRange range) {
 
         MergeCellsRequest mergeCellsRequest = new MergeCellsRequest()
                 .setRange(range)
@@ -206,7 +193,7 @@ public class GoogleSheetsService {
     }
 
 
-    public void setCellStyle(GridRange range, Color color, String textAlignment, int fontSize, boolean setBold, int borderWidth) {
+    private void setCellStyle(GridRange range, Color color, String textAlignment, int fontSize, boolean setBold, int borderWidth) {
         Border border = new Border()
                 .setStyle("SOLID")
                 .setWidth(borderWidth);
@@ -244,7 +231,7 @@ public class GoogleSheetsService {
         }
     }
 
-    public void setCellBordersStyle(GridRange range, int borderWidth) {
+    private void setCellBordersStyle(GridRange range, int borderWidth) {
         Border border = new Border()
                 .setStyle("SOLID")
                 .setWidth(borderWidth);
@@ -271,12 +258,14 @@ public class GoogleSheetsService {
     }
 
 
-    public void updateTable(SheetId sheetId) {
+    private void updateTable(SheetId sheetId) {
         int SHEET_ID = sheetId.getSheetId();
         String title = sheetId.getTitle();
+
+        int numberOfDaysOfMonth = postgres.getFirstAndLastDayOfMonth(title).getFirst().lengthOfMonth();
+
         //ОЧИСТКА ВСЕХ ЯЧЕЕК
         cleanTable(sheetId);
-
 
         //СЛИЯНИЕ СТОЛБЦОВ ДЛЯ ШАПКИ
         mergeCells(new GridRange()
@@ -284,7 +273,7 @@ public class GoogleSheetsService {
                 .setStartRowIndex(1)
                 .setEndRowIndex(2)
                 .setStartColumnIndex(1)
-                .setEndColumnIndex(35));
+                .setEndColumnIndex(numberOfDaysOfMonth+4));
 
         //ШИРИНА ТИТУЛЬНИКА 40
         setRowsOrColumnWidth(SHEET_ID, RowColumn.ROWS, 40, 1, 2);
@@ -293,22 +282,30 @@ public class GoogleSheetsService {
         //ШИРИНА 2-3 СТОЛБЦА 80
         setRowsOrColumnWidth(SHEET_ID, RowColumn.COLUMNS, 80, 2, 4);
         //ШИРИНА ОСТАЛЬНЫХ СТОЛБЦОВ 50
-        setRowsOrColumnWidth(SHEET_ID, RowColumn.COLUMNS, 50, 4, 35);
+        setRowsOrColumnWidth(SHEET_ID, RowColumn.COLUMNS, 50, 4, numberOfDaysOfMonth+4);
 
         //ФОРМАТ ВСЕЙ ТАБЛИЦЫ
         setCellStyle(new GridRange().setSheetId(SHEET_ID)
                 .setStartRowIndex(1)
                 .setEndRowIndex(13 + marketsNumber + numberOfDayPrinters + numberOfNightPrinters)
                 .setStartColumnIndex(1)
-                .setEndColumnIndex(35), getColorByHEX("#ffffff"), "CENTER", 11, false, 1);
+                .setEndColumnIndex(numberOfDaysOfMonth+4), getColorByHEX("#ffffff"), "CENTER", 11, false, 1);
+
+        //ВЫРАВНИВАНИЕ ПО ПРАВОМУ КРАЮ В ЯЧЕЙКАХ СТАТИСТИКИ
+        setCellStyle(new GridRange().setSheetId(SHEET_ID)
+                .setStartRowIndex(4)
+                .setEndRowIndex(13 + marketsNumber + numberOfDayPrinters + numberOfNightPrinters)
+                .setStartColumnIndex(4)
+                .setEndColumnIndex(numberOfDaysOfMonth+4), getColorByHEX("#ffffff"), "RIGHT", 11, false, 1);
+
 
         //ФОРМАТ ШАПКИ
         setCellStyle(new GridRange().setSheetId(SHEET_ID)
                 .setStartRowIndex(1)
                 .setEndRowIndex(2)
                 .setStartColumnIndex(1)
-                .setEndColumnIndex(35), getColorByHEX("#fffede"), "CENTER", 22, true, 2);
-        updateData(String.format("%s!B2", title), new ValueRange().setValues(List.of(List.of(getHeaderTitle()))));
+                .setEndColumnIndex(numberOfDaysOfMonth+4), getColorByHEX("#fffede"), "CENTER", 22, true, 2);
+        updateData(String.format("%s!B2", title), new ValueRange().setValues(List.of(List.of(sheetId.getTitle()))));
 
         //ФОРМАТ ТЕКСТА ОСНОВНОГО БЛОКА С ФИО
         setCellStyle(new GridRange()
@@ -323,57 +320,60 @@ public class GoogleSheetsService {
                 .setStartRowIndex(2)
                 .setEndRowIndex(3)
                 .setStartColumnIndex(1)
-                .setEndColumnIndex(35), getColorByHEX("#ffffff"), "CENTER", 11, true, 1);
-        updateData(String.format("%s!C3:AI3", title), new ValueRange().setValues(List.of(List.of("Общее", "Среднее", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31"))));
+                .setEndColumnIndex(numberOfDaysOfMonth+4), getColorByHEX("#ffffff"), "CENTER", 11, true, 1);
+        updateData(String.format("%s!C3:D3", title), new ValueRange().setValues(List.of(List.of("Общее", "Среднее"))));
+        for (int i = 1; i <= numberOfDaysOfMonth; i++) {
+            updateData(String.format("%s!%s3", title, getColumnLetter(i)), new ValueRange().setValues(List.of(List.of(i))));
+        }
 
         //ФОРМАТ СТРОКИ "СБОРКА"
         setCellStyle(new GridRange().setSheetId(SHEET_ID)
                 .setStartRowIndex(3)
                 .setEndRowIndex(4)
                 .setStartColumnIndex(1)
-                .setEndColumnIndex(35), getColorByHEX("#ffff00"), "LEFT", 11, true, 1);
+                .setEndColumnIndex(numberOfDaysOfMonth+4), getColorByHEX("#ffff00"), "LEFT", 11, true, 1);
 
         //ФОРМАТ СТРОКИ "ОБЩЕЕ СБОРКА"
         setCellStyle(new GridRange().setSheetId(SHEET_ID)
                 .setStartRowIndex(4 + marketsNumber)
                 .setEndRowIndex(5 + marketsNumber)
                 .setStartColumnIndex(1)
-                .setEndColumnIndex(35), getColorByHEX("#ffff00"), "LEFT", 11, true, 1);
+                .setEndColumnIndex(numberOfDaysOfMonth+4), getColorByHEX("#ffff00"), "LEFT", 11, true, 1);
 
         //ФОРМАТ СТРОКИ "ДНЕВНАЯ СМЕНА  (Напечатано/Брак)"
         setCellStyle(new GridRange().setSheetId(SHEET_ID)
                 .setStartRowIndex(6 + marketsNumber)
                 .setEndRowIndex(7 + marketsNumber)
                 .setStartColumnIndex(1)
-                .setEndColumnIndex(35), getColorByHEX("#76d2a1"), "LEFT", 11, true, 1);
+                .setEndColumnIndex(numberOfDaysOfMonth+4), getColorByHEX("#76d2a1"), "LEFT", 11, true, 1);
 
         //ФОРМАТ СТРОКИ "ОБЩЕЕ ДЕНЬ"
         setCellStyle(new GridRange().setSheetId(SHEET_ID)
                 .setStartRowIndex(7 + marketsNumber + numberOfDayPrinters)
                 .setEndRowIndex(8 + marketsNumber + numberOfDayPrinters)
                 .setStartColumnIndex(1)
-                .setEndColumnIndex(35), getColorByHEX("#76d2a1"), "LEFT", 11, true, 1);
+                .setEndColumnIndex(numberOfDaysOfMonth+4), getColorByHEX("#76d2a1"), "LEFT", 11, true, 1);
 
         //ФОРМАТ СТРОКИ "НОЧНАЯ СМЕНА"
         setCellStyle(new GridRange().setSheetId(SHEET_ID)
                 .setStartRowIndex(9 + marketsNumber + numberOfDayPrinters)
                 .setEndRowIndex(10 + marketsNumber + numberOfDayPrinters)
                 .setStartColumnIndex(1)
-                .setEndColumnIndex(35), getColorByHEX("#4dd0e1"), "LEFT", 11, true, 1);
+                .setEndColumnIndex(numberOfDaysOfMonth+4), getColorByHEX("#4dd0e1"), "LEFT", 11, true, 1);
 
         //ФОРМАТ СТРОКИ "ОБЩЕЕ НОЧЬ"
         setCellStyle(new GridRange().setSheetId(SHEET_ID)
                 .setStartRowIndex(10 + marketsNumber + numberOfDayPrinters + numberOfNightPrinters)
                 .setEndRowIndex(11 + marketsNumber + numberOfDayPrinters + numberOfNightPrinters)
                 .setStartColumnIndex(1)
-                .setEndColumnIndex(35), getColorByHEX("#4dd0e1"), "LEFT", 11, true, 1);
+                .setEndColumnIndex(numberOfDaysOfMonth+4), getColorByHEX("#4dd0e1"), "LEFT", 11, true, 1);
 
         //ФОРМАТ СТРОКИ "ОБЩЕЕ ПЕЧАТЬ"
         setCellStyle(new GridRange().setSheetId(SHEET_ID)
                 .setStartRowIndex(12 + marketsNumber + numberOfDayPrinters + numberOfNightPrinters)
                 .setEndRowIndex(13 + marketsNumber + numberOfDayPrinters + numberOfNightPrinters)
                 .setStartColumnIndex(1)
-                .setEndColumnIndex(35), getColorByHEX("#d8ffe1"), "LEFT", 11, true, 1);
+                .setEndColumnIndex(numberOfDaysOfMonth+4), getColorByHEX("#d8ffe1"), "LEFT", 11, true, 1);
 
         //ОСНОВНЫЕ ТЕСТОВЫЕ ПОЛЯ
         updateData(String.format("%s!B4", title), new ValueRange().setValues(List.of(List.of("СБОРКА"))));
@@ -435,19 +435,31 @@ public class GoogleSheetsService {
 
     }
 
+    private List<List<Object>> readValues(String range) {
+        ValueRange response;
+        try {
+            response = sheetService.spreadsheets().values()
+                    .get(SPREADSHEET_ID, range)
+                    .execute();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
-    public String getHeaderTitle() {
-        LocalDateTime date = LocalDateTime.now();
+        return response.getValues();
+    }
+
+    public String getHeaderTitle(LocalDate date) {
         String month = Months.valueOf(date.getMonth().toString()).getTranslation();
         return String.format("Статистика KPI за %s %d", month, date.getYear());
     }
 
-    public Color getColorByHEX(String hex) {
+    private Color getColorByHEX(String hex) {
         int red = Integer.parseInt(hex.substring(1, 3), 16);
         int green = Integer.parseInt(hex.substring(3, 5), 16);
         int blue = Integer.parseInt(hex.substring(5, 7), 16);
         return new Color().setRed(red / 255f).setGreen(green / 255f).setBlue(blue / 255f);
     }
+
     private void updateLabelList() {
         List<Employee> dayPrintersList = employeeService.getListOfDayPrinters();
         List<Employee> nightPrintersList = employeeService.getListOfNightPrinters();
@@ -492,58 +504,75 @@ public class GoogleSheetsService {
             nightKey++;
         }
     }
+
     public void addPackerStatistic(SheetId sheetId, PackerStatistic statistic) {
+
         updateLabelList();
         for (Map.Entry<Integer, String> entry : labelNumsList.entrySet()) {
-            if (entry.getValue().equals("WB MHC")){
-                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate_column()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getWb_mhc()))));
+            if (entry.getValue().equals("WB MHC")) {
+                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getWb_mhc()))));
             }
-            if (entry.getValue().equals("WB Signum")){
-                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate_column()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getWb_signum()))));
+            if (entry.getValue().equals("WB Signum")) {
+                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getWb_signum()))));
 
             }
-            if (entry.getValue().equals("WB Silicosha")){
-                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate_column()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getWb_silicosha()))));
+            if (entry.getValue().equals("WB Silicosha")) {
+                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getWb_silicosha()))));
 
             }
-            if (entry.getValue().equals("OZON MHC")){
-                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate_column()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getOzon()))));
+            if (entry.getValue().equals("OZON MHC")) {
+                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getOzon()))));
 
             }
-            if (entry.getValue().equals("Yandex MHC")){
-                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate_column()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getYandex()))));
+            if (entry.getValue().equals("Yandex MHC")) {
+                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getYandex()))));
 
             }
-            if (entry.getValue().equals("WB PrintKid")){
-                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate_column()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getWb_printkid()))));
+            if (entry.getValue().equals("WB PrintKid")) {
+                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getWb_printkid()))));
 
             }
-            if (entry.getValue().equals("FBO")){
-                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate_column()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getFbo()))));
+            if (entry.getValue().equals("FBO")) {
+                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getFbo()))));
             }
         }
+        log.info(String.format("БЫЛА ДОБАВЛЕНА СТАТИСТИКА СБОРЩИКА: %s", statistic));
     }
 
     public void addPrinterStatistic(SheetId sheetId, PrinterStatistic statistic) {
-        int rowNum = 0;
         updateLabelList();
+        boolean isEmployeeInTable = false;
+        List<List<Object>> values = readValues(String.format("%s!B1:B%d", sheetId.getTitle(), 20 + marketsNumber + numberOfDayPrinters + numberOfNightPrinters));
+        for (List<Object> value : values) {
+            if (!value.isEmpty()) {
+                if (value.getFirst().equals(statistic.getFio())) {
+                    isEmployeeInTable = true;
+                    break;
+                }
+            }
+        }
+        if (!isEmployeeInTable) {
+            log.info(String.format("ПЕЧАТНИКА %s В ТАБЛИЦЕ '%s' НЕТ",statistic.getFio(), sheetId.getTitle()));
+            fullUpdateTable(sheetId);
+        }
+
         for (Map.Entry<Integer, String> entry : labelNumsList.entrySet()) {
             if (entry.getValue().equals(statistic.getFio())) {
-                rowNum = entry.getKey();
+                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), entry.getKey()), new ValueRange().setValues(List.of(List.of(String.format("%s/%s", statistic.getPrints_num(), statistic.getDefects_num())))));
+                log.info(String.format("БЫЛА ДОБАВЛЕНА СТАТИСТИКА ПЕЧАТНИКА %s - %s", statistic.getFio(), statistic));
                 break;
             }
         }
-        if (rowNum != 0) {
-            updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), rowNum), new ValueRange().setValues(List.of(List.of(String.format("%s/%s", statistic.getPrints_num(), statistic.getDefects_num())))));
-        } else {
-            log.error("Строка с пользователем не найдена в листе {}", labelNumsList);
-        }
-
     }
 
-    private String getColumnLetter(String date) {
-        String day = date.substring(8, 10);
-        return switch (Integer.parseInt(day)) {
+    private String getColumnLetter(Object date) {
+        int day = 0;
+        if(date instanceof String) {
+             day = Integer.parseInt(((String) date).substring(8, 10));
+        } else if (date instanceof Integer) {
+            day = (Integer) date;
+        }
+        return switch (day) {
             case 1 -> "E";
             case 2 -> "F";
             case 3 -> "G";
@@ -575,24 +604,32 @@ public class GoogleSheetsService {
             case 29 -> "AG";
             case 30 -> "AH";
             case 31 -> "AI";
-            default -> throw new IllegalStateException("Дата не была распознана: " + day);
+            default -> throw new IllegalStateException("Дата не была распознана в методе getColumnLetter(), дата = : " + day);
         };
     }
 
 
     public void fullUpdateTable(SheetId sheetId) {
+        log.info(String.format("ВЫПОЛНЯЮ ПОЛНОЕ ОБНОВЛЕНИЕ ТАБЛИЦЫ '%s'",sheetId.getTitle()));
         List<Employee> dayPrintersList = employeeService.getListOfDayPrinters();
         List<Employee> nightPrintersList = employeeService.getListOfNightPrinters();
-        List<PackerStatistic> packerStatisticList = postgres.getAllPackerStatistics();
+        List<PackerStatistic> packerStatisticList = postgres.getAllPackerStatistics(sheetId.getTitle());
         updateLabelList();
         updateTable(sheetId);
-        updateAllStatistic(sheetId, dayPrintersList, nightPrintersList,packerStatisticList);
+        updateAllStatistic(sheetId, dayPrintersList, nightPrintersList, packerStatisticList);
+        log.info(String.format("ТАБЛИЦА '%s' ПОЛНОСТЬЮ ОБНОВЛЕНА АКТУАЛЬНЫМИ ДАННЫМИ",sheetId.getTitle()));
     }
 
-    private void updateAllStatistic(SheetId sheetId, List<Employee> dayPrintersList, List<Employee> nightPrintersList,List<PackerStatistic> packerStatisticList) {
-        updatePrinterStatistic(sheetId, dayPrintersList);
-        updatePrinterStatistic(sheetId, nightPrintersList);
-        updatePackerStatistic(sheetId, packerStatisticList);
+    private void updateAllStatistic(SheetId sheetId, List<Employee> dayPrintersList, List<Employee> nightPrintersList, List<PackerStatistic> packerStatisticList) {
+        if (dayPrintersList!=null){
+            updatePrinterStatistic(sheetId, dayPrintersList);
+        }
+        if (nightPrintersList!=null){
+            updatePrinterStatistic(sheetId, nightPrintersList);
+        }
+        if (packerStatisticList!=null){
+            updatePackerStatistic(sheetId, packerStatisticList);
+        }
     }
 
     private void updatePackerStatistic(SheetId sheetId, List<PackerStatistic> packerStatisticList) {
@@ -605,20 +642,14 @@ public class GoogleSheetsService {
         for (Employee employee : printersList) {
             for (Map.Entry<Integer, String> entry : labelNumsList.entrySet()) {
                 if (entry.getValue().equals(employee.getFio())) {
-                    int rowNum = entry.getKey();
-                    List<org.example.postgresql.entity.PrinterStatistic> stat_list = postgres.getPrinterStatisticByChatId(employee.getChatId());
+                    List<org.example.postgresql.entity.PrinterStatistic> stat_list = postgres.getPrinterStatisticByChatId(employee.getChatId(), sheetId.getTitle());
                     if (stat_list != null) {
                         for (org.example.postgresql.entity.PrinterStatistic statistic : stat_list) {
-                            updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), rowNum), new ValueRange().setValues(List.of(List.of(String.format("%s/%s", statistic.getPrints_num(), statistic.getDefects_num())))));
+                            updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), entry.getKey()), new ValueRange().setValues(List.of(List.of(String.format("%s/%s", statistic.getPrints_num(), statistic.getDefects_num())))));
                         }
                     }
                 }
             }
         }
     }
-
-
-
-
-
 }

@@ -37,7 +37,8 @@ public class CallbackQueryHandler implements Handler {
         currentEmployee = employeeService.getEmployeeByChatId(chatId);
 
         sendMessage.setChatId(chatId);
-        sendMessage.setText("Я не знаю такой команды B \uD83E\uDD37");
+        sendMessage.setText("Эта команда сейчас неактивна) Если нужна помощь - попробуйте <b>/help</b>");
+        sendMessage.setParseMode("HTML");
 
         if (currentEmployee.getStatus().equals(EmployeeStatus.WAITING_JOB)) {
             if (callback.equals(ButtonLabels.I_AM_PACKER.getCallback())) {
@@ -82,19 +83,16 @@ public class CallbackQueryHandler implements Handler {
         String nicePhrase;
         postgres.addValueInBufferFromPrinter(currentEmployee, dateService.parseStringToSqlDate(callback), "date");
         nicePhrase = postgres.getNicePhraseToPrinter(currentEmployee);
-        if (postgres.moveDataFromPrinterBufferToMainTable(currentEmployee)) {
+        PrinterStatistic addedStat = postgres.moveDataFromPrinterBufferToMainTable(currentEmployee);
+        if (addedStat != null) {
             currentEmployee.setStatus(EmployeeStatus.SAVED);
             employeeService.save(currentEmployee);
-            PrinterStatistic statistic = postgres.getLastAddedPrinterRecord(currentEmployee);
             sendMessage.setText(String.format("Я все записал!\n%s", nicePhrase));
-            if (statistic != null) {
-                kafkaProducer.send("printer_stat_topic", statistic);
-            } else {
-                log.error(String.format("НЕ ПОЛУЧИЛОСЬ ВЕРНУТЬ ПОСЛЕДНЮЮ ДОБАВЛЕННУЮ СТАТИСТИКУ У ПОЛЬЗОВАТЕЛЯ %s", currentEmployee.getChatId()));
-            }
+            kafkaProducer.send("printer_stat_topic", addedStat);
         }else{
             sendMessage.setText("У меня не очень получилось записать :(\nМожет, попробовать еще раз?");
         }
+        sendMessage.setReplyMarkup(ReplyKeyboardFactory.getShowAndAddKeyboard());
         return sendMessage;
     }
 

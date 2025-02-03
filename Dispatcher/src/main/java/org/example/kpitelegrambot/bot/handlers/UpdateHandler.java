@@ -24,6 +24,7 @@ public class UpdateHandler implements Handler {
     TelegramBot telegramBot;
     private final PrinterHandler printerHandler;
     private final PackerHandler packerHandler;
+    private final KafkaProducer kafkaProducer;
 
     public void register(TelegramBot telegramBot) {
         this.telegramBot = telegramBot;
@@ -35,13 +36,22 @@ public class UpdateHandler implements Handler {
         String text = update.getMessage().getText();
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
-        sendMessage.setText("Я не знаю такой команды \uD83E\uDD37");
         employee = employeeService.getEmployeeByChatId(chatId);
         EmployeePost job = employee.getJob();
 
         if (text.equals("/forget_me")) {
             employeeService.deleteEmployeeByChatId(chatId);
             return forgetEmployeeProcess(sendMessage);
+        }
+        if (text.equals("/kuiva_machine")) {
+           sendMessage.setText(AnswersList.ADMIN_COMMANDS.getText());
+           sendMessage.setParseMode("HTML");
+            return sendMessage;
+        }
+        if (text.equals("/update_table")) {
+            sendMessage.setText("Обновляю таблицу KPI за текущий месяц");
+            kafkaProducer.send("commands", "UPDATE");
+            return sendMessage;
         }
         if (text.equals("/help")) {
             switch (job) {
@@ -62,11 +72,9 @@ public class UpdateHandler implements Handler {
     }
 
     private SendMessage forgetEmployeeProcess(SendMessage sendMessage) {
-        sendMessage.setText("""
-                Начнем с начала)
-                Например, с команды /start
-                """);
+        sendMessage.setText(AnswersList.FORGET_ME.getText());
         sendMessage.setReplyMarkup(new ReplyKeyboardRemove(true));
+        sendMessage.setParseMode("HTML");
         return sendMessage;
     }
 
@@ -82,16 +90,12 @@ public class UpdateHandler implements Handler {
         }
         if (employee.getStatus().equals(EmployeeStatus.WAITING_JOB)) {
             telegramBot.deleteLastMessage(chatId, update.getMessage().getMessageId());
-            sendMessage.setText("""
-                    Ну так кем Вы работаете?)
-                    """);
+            sendMessage.setText(AnswersList.INVALID_JOB.getText());
             sendMessage.setReplyMarkup(InlineKeyboardFactory.getJobChoiceKeyboard());
         }
         if (employee.getStatus().equals(EmployeeStatus.WAITING_WORKTIME)) {
             telegramBot.deleteLastMessage(chatId, update.getMessage().getMessageId());
-            sendMessage.setText("""
-                    Вы работаете дневную или в ночную смену?)
-                    """);
+            sendMessage.setText(AnswersList.WORKTIME_CHOICE.getText());
             sendMessage.setReplyMarkup(InlineKeyboardFactory.getDayNightKeyboard());
         }
 
@@ -104,10 +108,7 @@ public class UpdateHandler implements Handler {
             employee.setFio(text);
             employee.setStatus(EmployeeStatus.WAITING_JOB);
             employeeService.save(employee);
-            sendMessage.setText("""
-                    Приятно познакомиться ☺
-                    А кем Вы работаете?)
-                    """);
+            sendMessage.setText(AnswersList.JOB_CHOICE.getText());
             sendMessage.setReplyMarkup(InlineKeyboardFactory.getJobChoiceKeyboard());
         } else {
             sendMessage.setText(String.format("Не совсем верно \uD83D\uDE42\nВаше ФИО, каждое слово с большой буквы, через пробел ☝\nФормат: «Фамилия Имя Отчество»\n\nВы ввели: \"%s\"", text));
@@ -140,10 +141,7 @@ public class UpdateHandler implements Handler {
         employee.setUsername(update.getMessage().getFrom().getUserName());
         employee.setStatus(EmployeeStatus.WAITING_FIO);
         employeeService.save(employee);
-        sendMessage.setText("""
-                Привет! 👋 Я бот KPI, я буду записывать Вашу статистику!  \uD83D\uDE0E
-                Введите Ваше ФИО, я его запомню.\s
-                Например: «Никифорова Любовь Николаевна» \uD83D\uDE42""");
+        sendMessage.setText(AnswersList.NEW_USER_MESSAGE.getText());
         sendMessage.setReplyMarkup(new ReplyKeyboardRemove(true));
         return sendMessage;
     }

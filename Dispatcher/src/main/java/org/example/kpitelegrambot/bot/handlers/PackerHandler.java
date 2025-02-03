@@ -2,8 +2,10 @@ package org.example.kpitelegrambot.bot.handlers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.checkerframework.checker.units.qual.A;
 import org.example.kpitelegrambot.bot.TelegramBot;
 import org.example.kpitelegrambot.bot.keyboards.ReplyKeyboardFactory;
+import org.example.kpitelegrambot.data.AnswersList;
 import org.example.kpitelegrambot.data.ButtonLabels;
 import org.example.kpitelegrambot.googlesheets.KafkaProducer;
 import org.example.postgresql.data.EmployeeStatus;
@@ -27,7 +29,7 @@ public class PackerHandler implements JobHandler {
 
     @Override
     public SendMessage process(TelegramBot telegramBot, Update update, Employee currentEmployee, SendMessage sendMessage) {
-        sendMessage.setText("Я не знаю такой команды С \uD83E\uDD37");
+        sendMessage.setText(AnswersList.PACKER_INVALID_COMMAND.getText());
         String receivedMessage = update.getMessage().getText();
 
         if (receivedMessage.equals("/start")) {
@@ -112,28 +114,24 @@ public class PackerHandler implements JobHandler {
     }
 
     private SendMessage invalidDateProcess(SendMessage sendMessage) {
-        sendMessage.setText("Просто выберите дату Вашей смены)");
+        sendMessage.setText(AnswersList.INVALID_DATE.getText());
         return sendMessage;
     }
 
     private SendMessage fillFboNumberProcess(SendMessage sendMessage, Employee currentEmployee, String fbo) {
         postgres.addValueInBufferFromPacker(currentEmployee, Integer.parseInt(fbo), "fbo");
-        postgres.addValueInBufferFromPacker(currentEmployee, dateService.getLocalDate(), "date_column");
-        if (postgres.moveDataFromPackerBufferToMainTable(currentEmployee)) {
+        postgres.addValueInBufferFromPacker(currentEmployee, dateService.getLocalDate(), "date");
+
+        PackerStatistic statistic = postgres.moveDataFromPackerBufferToMainTable(currentEmployee);
+        if (statistic != null) {
             String nicePhrase = postgres.getNicePhrase();
             currentEmployee.setStatus(EmployeeStatus.SAVED);
             employeeService.save(currentEmployee);
             sendMessage.setText(String.format("Я все записал!\n%s", nicePhrase));
-            PackerStatistic statistic = postgres.getLastAddedPackerRecord();
-            if (statistic != null) {
-                kafkaProducer.send("packer_stat_topic", statistic);
-            } else {
-                log.error(String.format("НЕ ПОЛУЧИЛОСЬ ВЕРНУТЬ ПОСЛЕДНЮЮ ДОБАВЛЕННУЮ СТАТИСТИКУ СБОРЩИКА ПО ЗАПРОСУ ПОЛЬЗОВАТЕЛЯ %s", currentEmployee.getFio()));
-            }
+            kafkaProducer.send("packer_stat_topic", statistic);
         } else {
-            sendMessage.setText("У меня не очень получилось записать :(\nМожет, попробовать еще раз?");
+            sendMessage.setText(AnswersList.MOVE_DATA_ERROR.getText());
         }
-
         sendMessage.setReplyMarkup(ReplyKeyboardFactory.getShowAndAddKeyboard());
         return sendMessage;
     }
@@ -142,7 +140,7 @@ public class PackerHandler implements JobHandler {
         postgres.addValueInBufferFromPacker(currentEmployee, Integer.parseInt(wb_printKid), "wb_printKid");
         currentEmployee.setStatus(EmployeeStatus.WAITING_FBO);
         employeeService.save(currentEmployee);
-        sendMessage.setText("Последнее - сколько собрано ФБО?");
+        sendMessage.setText(AnswersList.FBO_REQUEST.getText());
         return sendMessage;
     }
 
@@ -150,7 +148,7 @@ public class PackerHandler implements JobHandler {
         postgres.addValueInBufferFromPacker(currentEmployee, Integer.parseInt(yandex), "yandex");
         currentEmployee.setStatus(EmployeeStatus.WAITING_PRINT_KID);
         employeeService.save(currentEmployee);
-        sendMessage.setText("А на WB PrintKid? Сколько? Мм? \uD83E\uDDD0 ");
+        sendMessage.setText(AnswersList.PRINT_KID_REQUEST.getText());
         return sendMessage;
     }
 
@@ -158,7 +156,7 @@ public class PackerHandler implements JobHandler {
         postgres.addValueInBufferFromPacker(currentEmployee, Integer.parseInt(ozon), "ozon");
         currentEmployee.setStatus(EmployeeStatus.WAITING_YANDEX);
         employeeService.save(currentEmployee);
-        sendMessage.setText("А на Яндексе? 😱");
+        sendMessage.setText(AnswersList.YANDEX_REQUEST.getText());
         return sendMessage;
     }
 
@@ -166,7 +164,7 @@ public class PackerHandler implements JobHandler {
         postgres.addValueInBufferFromPacker(currentEmployee, Integer.parseInt(wb_silicosha), "wb_silicosha");
         currentEmployee.setStatus(EmployeeStatus.WAITING_OZON);
         employeeService.save(currentEmployee);
-        sendMessage.setText("Так, отлично. А сколько сегодня собрано на Озоне? \uD83D\uDE11");
+        sendMessage.setText(AnswersList.OZON_REQUEST.getText());
         return sendMessage;
     }
 
@@ -174,7 +172,7 @@ public class PackerHandler implements JobHandler {
         postgres.addValueInBufferFromPacker(currentEmployee, Integer.parseInt(wb_signum), "wb_signum");
         currentEmployee.setStatus(EmployeeStatus.WAITING_SL);
         employeeService.save(currentEmployee);
-        sendMessage.setText("Сколько Вы собрали на SL?");
+        sendMessage.setText(AnswersList.SL_REQUEST.getText());
         return sendMessage;
     }
 
@@ -182,19 +180,26 @@ public class PackerHandler implements JobHandler {
         postgres.addValueInBufferFromPacker(currentEmployee, Integer.parseInt(wb_mhc), "wb_mhc");
         currentEmployee.setStatus(EmployeeStatus.WAITING_SIGNUM);
         employeeService.save(currentEmployee);
-        sendMessage.setText("Сколько Вы собрали на ЕБ?");
+        sendMessage.setText(AnswersList.SIGNUM_REQUEST.getText());
         return sendMessage;
     }
 
+
+    public SendMessage createNewStatisticPost(Employee currentEmployee, SendMessage sendMessage) {
+        postgres.createNewPackerStatisticTableIfNotExists();
+        postgres.createNewPackerStatisticBuffer(currentEmployee);
+        currentEmployee.setStatus(EmployeeStatus.WAITING_WB_MHC);
+        employeeService.save(currentEmployee);
+        sendMessage.setText(AnswersList.WB_MHC_REQUEST.getText());
+        sendMessage.setReplyMarkup(ReplyKeyboardFactory.getCancelKeyboard());
+        return sendMessage;
+    }
 
     public SendMessage cancelAddingStatistic(SendMessage sendMessage, Employee currentEmployee) {
         postgres.deletePackerBuffer(currentEmployee);
         currentEmployee.setStatus(EmployeeStatus.SAVED);
         employeeService.save(currentEmployee);
-        sendMessage.setText("""
-                Я все отменил 👍 Чтобы записать статистику,\s
-                нажмите «Добавить новую статистику»
-                """);
+        sendMessage.setText(AnswersList.CANCEL_MESSAGE.getText());
         sendMessage.setReplyMarkup(ReplyKeyboardFactory.getAddStatKeyboard());
         return sendMessage;
     }
@@ -206,21 +211,6 @@ public class PackerHandler implements JobHandler {
 
     public SendMessage showLastRecord(Employee currentEmployee, SendMessage sendMessage) {
         sendMessage.setText(postgres.getLastAddedPackerRecordToString());
-        return sendMessage;
-    }
-
-    public SendMessage createNewStatisticPost(Employee currentEmployee, SendMessage sendMessage) {
-        postgres.createNewPackerStatisticTableIfNotExists();
-        if (postgres.isAddedPackerStatisticToday()) {
-            sendMessage.setText("Сегодня уже была добавлена статистика \uD83E\uDD37 \uD83D\uDE42");
-            sendMessage.setReplyMarkup(ReplyKeyboardFactory.getShowAndAddKeyboard());
-        } else {
-            postgres.createNewPackerStatisticBuffer(currentEmployee);
-            currentEmployee.setStatus(EmployeeStatus.WAITING_WB_MHC);
-            employeeService.save(currentEmployee);
-            sendMessage.setText("Сколько Вы собрали на основном ВБ?");
-            sendMessage.setReplyMarkup(ReplyKeyboardFactory.getCancelKeyboard());
-        }
         return sendMessage;
     }
 }

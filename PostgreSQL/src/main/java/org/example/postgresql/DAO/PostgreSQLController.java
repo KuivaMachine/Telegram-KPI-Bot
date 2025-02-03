@@ -1,15 +1,18 @@
 package org.example.postgresql.DAO;
 
 import lombok.extern.log4j.Log4j2;
+import org.example.postgresql.data.Months;
 import org.example.postgresql.entity.*;
 import org.example.postgresql.service.DateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Controller;
 
 import java.sql.*;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Random;
 
@@ -44,13 +47,13 @@ public class PostgreSQLController {
         return jdbcTemplate.queryForList(sql, String.class);
     }
 
-    public void createNewStatisticTableIfNotExists(Employee currentEmployee) {
+    public void createNewPrinterStatisticTableIfNotExists(Employee currentEmployee) {
         String tableName = String.format("statistic_from_%s", currentEmployee.getChatId());
-        String sql = String.format("CREATE TABLE IF NOT EXISTS %s (id SERIAL PRIMARY KEY, date DATE UNIQUE, prints_num INT DEFAULT 0, defects_num INT DEFAULT 0);", tableName);
+        String sql = String.format("CREATE TABLE IF NOT EXISTS %s (id SERIAL PRIMARY KEY, date DATE UNIQUE, prints_num INT DEFAULT 0, defects_num INT DEFAULT 0, created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP);", tableName);
         makeSqlRequestByStatement(sql);
     }
 
-    public void createNewStatisticBuffer(Employee currentEmployee) {
+    public void createNewPrinterStatisticBuffer(Employee currentEmployee) {
         String tableName = String.format("statistic_buffer_from_printer_%s", currentEmployee.getChatId());
         String sql = String.format("CREATE TABLE IF NOT EXISTS %s (id SERIAL PRIMARY KEY, date DATE UNIQUE, prints_num INT DEFAULT 0, defects_num INT DEFAULT 0);", tableName);
         makeSqlRequestByStatement(sql);
@@ -63,42 +66,28 @@ public class PostgreSQLController {
         makeSqlRequestByPreparedStatement(sql, value);
     }
 
-    public boolean moveDataFromPrinterBufferToMainTable(Employee currentEmployee) {
+    public PrinterStatistic moveDataFromPrinterBufferToMainTable(Employee currentEmployee) {
         String bufferTableName = String.format("statistic_buffer_from_printer_%s", currentEmployee.getChatId());
         String mainTableName = String.format("statistic_from_%s", currentEmployee.getChatId());
-        String sql = String.format("BEGIN TRANSACTION; " +
-                "INSERT INTO %s (date, prints_num, defects_num) " +
-                "SELECT date, prints_num, defects_num " +
-                "FROM %s ON CONFLICT (date) DO UPDATE " +
-                "SET prints_num = EXCLUDED.prints_num, " +
-                "defects_num = EXCLUDED.defects_num; " +
-                "DROP TABLE %s;" +
-                "COMMIT;", mainTableName, bufferTableName, bufferTableName);
-        return makeSqlRequestByStatement(sql);
-    }
-
-    public PackerStatistic getLastAddedPackerRecord() {
-        String tableName = "statistics_by_packers";
-        String getLastStatRequest = String.format("SELECT * " +
-                "FROM %s " +
-                "ORDER BY date_column DESC " +
-                "LIMIT 1;", tableName);
-        return jdbcTemplate.queryForObject(getLastStatRequest, new PackerStatisticMapper());
+        String insertQuery = String.format("INSERT INTO %s (date, prints_num, defects_num, created_at) SELECT date, prints_num, defects_num, CURRENT_TIMESTAMP FROM %s ON CONFLICT (date) DO UPDATE SET prints_num = EXCLUDED.prints_num, defects_num = EXCLUDED.defects_num, created_at = CURRENT_TIMESTAMP RETURNING *;", mainTableName, bufferTableName);
+        PrinterStatistic stat = jdbcTemplate.queryForObject(insertQuery, new PrinterStatisticMapper());
+        if (stat != null) {
+            stat.setFio(currentEmployee.getFio());
+        }
+        deletePrinterBuffer(currentEmployee);
+        return stat;
     }
 
     public String getLastAddedPackerRecordToString() {
         String tableName = "statistics_by_packers";
-        String getLastStatRequest = String.format("SELECT * " +
-                "FROM %s " +
-                "ORDER BY date_column DESC " +
-                "LIMIT 1;", tableName);
+        String getLastStatRequest = String.format("SELECT * FROM %s ORDER BY created_at DESC LIMIT 1;", tableName);
 
         PackerStatistic statistic = jdbcTemplate.queryForObject(getLastStatRequest, new PackerStatisticMapper());
 
         StringBuilder sb = new StringBuilder();
 
         if (statistic != null) {
-            sb.append(DateService.parseSqlDateToString(statistic.getDate_column()))
+            sb.append(DateService.parseSqlDateToString(statistic.getDate()))
                     .append("\n")
                     .append("WB основной: ").append(statistic.getWb_mhc())
                     .append("\n")
@@ -119,10 +108,7 @@ public class PostgreSQLController {
 
     public String getLastAddedPrinterRecordToString(Employee currentEmployee) {
         String tableName = String.format("statistic_from_%s", currentEmployee.getChatId());
-        String getLastStatRequest = String.format("SELECT date, prints_num, defects_num " +
-                "FROM %s " +
-                "ORDER BY id DESC " +
-                "LIMIT 1;", tableName);
+        String getLastStatRequest = String.format("SELECT date, prints_num, defects_num FROM %s ORDER BY created_at DESC LIMIT 1;", tableName);
         StringBuilder sb = new StringBuilder();
         sb.append(currentEmployee.getFio()).append("\n");
         PrinterStatistic statistic = jdbcTemplate.queryForObject(getLastStatRequest, new PrinterStatisticMapper());
@@ -135,21 +121,6 @@ public class PostgreSQLController {
         }
 
         return sb.toString();
-    }
-
-    public PrinterStatistic getLastAddedPrinterRecord(Employee currentEmployee) {
-        String tableName = String.format("statistic_from_%s", currentEmployee.getChatId());
-        String getLastStatRequest = String.format("SELECT * " +
-                "FROM %s " +
-                "ORDER BY id DESC " +
-                "LIMIT 1;", tableName);
-        PrinterStatistic statistic = jdbcTemplate.queryForObject(getLastStatRequest, new PrinterStatisticMapper());
-        if (statistic != null) {
-            statistic.setFio(currentEmployee.getFio());
-            return statistic;
-        } else {
-            return null;
-        }
     }
 
     public void deletePrinterBuffer(Employee currentEmployee) {
@@ -199,13 +170,13 @@ public class PostgreSQLController {
 
     public void createNewPackerStatisticTableIfNotExists() {
         String tableName = "statistics_by_packers";
-        String sql = String.format("CREATE TABLE IF NOT EXISTS %s (date_column DATE PRIMARY KEY NOT NULL, wb_mhc INT DEFAULT 0, wb_signum INT DEFAULT 0, wb_silicosha INT DEFAULT 0, ozon INT DEFAULT 0, yandex INT DEFAULT 0, wb_printKid INT DEFAULT 0, fbo INT DEFAULT 0);", tableName);
+        String sql = String.format("CREATE TABLE IF NOT EXISTS %s (date DATE PRIMARY KEY NOT NULL, wb_mhc INT DEFAULT 0, wb_signum INT DEFAULT 0, wb_silicosha INT DEFAULT 0, ozon INT DEFAULT 0, yandex INT DEFAULT 0, wb_printKid INT DEFAULT 0, fbo INT DEFAULT 0, created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP);", tableName);
         makeSqlRequestByStatement(sql);
     }
 
     public void createNewPackerStatisticBuffer(Employee currentEmployee) {
         String bufferTableName = String.format("statistic_buffer_from_packer_%s", currentEmployee.getChatId());
-        String sql = String.format("CREATE TABLE IF NOT EXISTS %s (id SERIAL PRIMARY KEY NOT NULL, date_column DATE, wb_mhc INT DEFAULT 0, wb_signum INT DEFAULT 0, wb_silicosha INT DEFAULT 0, ozon INT DEFAULT 0, yandex INT DEFAULT 0, wb_printKid INT DEFAULT 0, fbo INT DEFAULT 0);", bufferTableName);
+        String sql = String.format("CREATE TABLE IF NOT EXISTS %s (id SERIAL PRIMARY KEY NOT NULL, date DATE, wb_mhc INT DEFAULT 0, wb_signum INT DEFAULT 0, wb_silicosha INT DEFAULT 0, ozon INT DEFAULT 0, yandex INT DEFAULT 0, wb_printKid INT DEFAULT 0, fbo INT DEFAULT 0);", bufferTableName);
         makeSqlRequestByStatement(sql);
     }
 
@@ -221,54 +192,70 @@ public class PostgreSQLController {
         makeSqlRequestByStatement(sqlDropRequest);
     }
 
-    public boolean moveDataFromPackerBufferToMainTable(Employee currentEmployee) {
+    public PackerStatistic moveDataFromPackerBufferToMainTable(Employee currentEmployee) {
         String bufferTableName = String.format("statistic_buffer_from_packer_%s", currentEmployee.getChatId());
         String mainTableName = "statistics_by_packers";
-        String sql = String.format("BEGIN TRANSACTION; " +
-                "INSERT INTO %s (date_column, wb_mhc, wb_signum, wb_silicosha, ozon, yandex, wb_printKid, fbo) " +
-                "SELECT date_column, wb_mhc, wb_signum, wb_silicosha, ozon, yandex, wb_printKid, fbo " +
-                "FROM %s;" +
-                "DROP TABLE %s;" +
-                "COMMIT;", mainTableName, bufferTableName, bufferTableName);
-        return makeSqlRequestByStatement(sql);
+        String sql = String.format("INSERT INTO %s (date, wb_mhc, wb_signum, wb_silicosha, ozon, yandex, wb_printKid, fbo, created_at) SELECT date,wb_mhc,wb_signum,wb_silicosha,ozon,yandex,wb_printKid,fbo, CURRENT_TIMESTAMP FROM %s ON CONFLICT (date) DO UPDATE SET date = excluded.date,wb_mhc= excluded.wb_mhc,wb_signum= excluded.wb_signum,wb_silicosha = excluded.wb_silicosha,ozon= excluded.ozon,yandex= excluded.yandex,wb_printkid= excluded.wb_printkid,fbo= excluded.fbo,created_at=CURRENT_TIMESTAMP RETURNING*;", mainTableName, bufferTableName);
+        PackerStatistic statistic = jdbcTemplate.queryForObject(sql, new PackerStatisticMapper());
+        deletePackerBuffer(currentEmployee);
+        return statistic;
     }
 
 
-    public boolean isAddedPackerStatisticToday() {
-        Date date = Date.valueOf(LocalDate.now());
-        String sql = String.format("SELECT 1 FROM statistics_by_packers WHERE date_column = '%s';", date);
-        return makeSelectRequest(sql).equals(List.of("1"));
 
+    // Вспомогательный метод для проверки существования таблицы
+    private boolean doesTableExist(String tableName) {
+        String doesTableExistRequest = String.format("SELECT 1 FROM information_schema.tables WHERE table_name = '%s'", tableName);
+        return makeSelectRequest(doesTableExistRequest).equals(List.of("1"));
+    }
+
+    // Вспомогательный метод для получения первого и последнего дня месяца
+    public List<LocalDate> getFirstAndLastDayOfMonth(String table) {
+        int year = Integer.parseInt(table.substring(table.length() - 4));
+        int month = 0;
+        for (Months m : Months.values()) {
+            if (table.toLowerCase().contains(m.getTranslation())) {
+                month = m.getNumber();
+                break;
+            }
+        }
+        LocalDate firstDayOfMonth = YearMonth.of(year, month).atDay(1);
+        LocalDate lastDayOfMonth = YearMonth.of(year, month).atEndOfMonth();
+        return List.of(firstDayOfMonth, lastDayOfMonth);
+    }
+
+    // Метод для выполнения выборки статистики
+    private <T> List<T> executeQuery(String query, RowMapper<T> rowMapper) {
+        log.info("ДЛЯ ОБНОВЛЕНИЯ ТАБЛИЦЫ БЫЛА СДЕЛАНА ВЫБОРКА {}", query);
+        return jdbcTemplate.query(query, rowMapper);
     }
 
 
-    public List<PrinterStatistic> getPrinterStatisticByChatId(long chatId) {
+    public List<PrinterStatistic> getPrinterStatisticByChatId(long chatId, String table) {
         String tableName = String.format("statistic_from_%s", chatId);
-        String doesTableExistRequest = String.format("SELECT 1 FROM information_schema.tables WHERE table_name = '%s'", tableName);
-        if (!makeSelectRequest(doesTableExistRequest).equals(List.of("1"))) {
-            log.info("ТАБЛИЦЫ НЕТ");
-            return null;
+        if (doesTableExist(tableName)) {
+            List<LocalDate> dates = getFirstAndLastDayOfMonth(table);
+            String selectStatRequest = String.format("SELECT * FROM %s WHERE date >= '%s' AND date <= '%s';",
+                    tableName, dates.getFirst(), dates.getLast());
+            return executeQuery(selectStatRequest, new PrinterStatisticMapper());
         } else {
-            log.info("ТАБЛИЦА ЕСТЬ");
-            LocalDate date = LocalDate.now();
-            String selectStatRequest = String.format("SELECT * FROM %s WHERE date >= '%s' AND date <= '%s';", tableName, date.minusDays(date.getDayOfMonth() - 1), date);
-            log.error(selectStatRequest);
-            return jdbcTemplate.query(selectStatRequest, new PrinterStatisticMapper());
+            log.info(String.format("ТАБЛИЦЫ ПЕЧАТНИКА %s НЕ СУЩЕСТВУЕТ", chatId));
+            return null;
         }
     }
 
-    public List<PackerStatistic> getAllPackerStatistics() {
+
+    public List<PackerStatistic> getAllPackerStatistics(String table) {
         String tableName = "statistics_by_packers";
-        String doesTableExistRequest = String.format("SELECT 1 FROM information_schema.tables WHERE table_name = '%s'", tableName);
-        if (!makeSelectRequest(doesTableExistRequest).equals(List.of("1"))) {
-            log.info("ТАБЛИЦЫ НЕТ");
-            return null;
+        if (doesTableExist(tableName)) {
+            List<LocalDate> dates = getFirstAndLastDayOfMonth(table);
+            String selectStatRequest = String.format("SELECT * FROM %s WHERE date >= '%s' AND date <= '%s';",
+                    tableName, dates.getFirst(), dates.getLast());
+            return executeQuery(selectStatRequest, new PackerStatisticMapper());
         } else {
-            log.info("ТАБЛИЦА ЕСТЬ");
-            LocalDate date = LocalDate.now();
-            String selectStatRequest = String.format("SELECT * FROM %s WHERE date >= '%s' AND date <= '%s';", tableName, date.minusDays(date.getDayOfMonth() - 1), date);
-            log.error(selectStatRequest);
-            return jdbcTemplate.query(selectStatRequest, new PackerStatisticMapper());
+            log.info("ТАБЛИЦЫ СБОРЩИКОВ НЕ СУЩЕСТВУЕТ");
+            return null;
         }
     }
+
 }
