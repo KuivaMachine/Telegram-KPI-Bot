@@ -10,7 +10,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Controller;
 
-import java.sql.*;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
@@ -29,21 +28,19 @@ public class PostgreSQLController {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public boolean makeSqlRequestByStatement(String sql) {
+    private void makeSqlRequestByStatement(String sql) {
         try {
             jdbcTemplate.execute(sql);
         } catch (DataAccessException e) {
             log.error(e.getMessage());
-            return false;
         }
-        return true;
     }
 
-    public void makeSqlRequestByPreparedStatement(String sql, Object data) {
+   private void makeSqlRequestByPreparedStatement(String sql, Object data) {
         jdbcTemplate.update(sql, data);
     }
 
-    public List<String> makeSelectRequest(String sql) {
+    private List<String> makeSelectRequest(String sql) {
         return jdbcTemplate.queryForList(sql, String.class);
     }
 

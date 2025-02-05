@@ -60,16 +60,6 @@ public class GoogleSheetsService {
         return -1;
     }
 
-    private void updateData(String range, ValueRange data) {
-        try {
-            sheetService.spreadsheets().values().update(SPREADSHEET_ID, range, data)
-                    .setValueInputOption("RAW")
-                    .execute();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
 
     private int generateSheetId() {
         Random random = new Random();
@@ -187,14 +177,6 @@ public class GoogleSheetsService {
                 .setStartColumnIndex(1)
                 .setEndColumnIndex(numberOfDaysOfMonth + 4), getColorByHEX("#ffffff"), "CENTER", 11, false, 1));
 
-        // Выравнивание по правому краю в ячейках статистики
-        requests.add(createCellStyleRequest(new GridRange()
-                .setSheetId(SHEET_ID)
-                .setStartRowIndex(4)
-                .setEndRowIndex(13 + marketsNumber + numberOfDayPrinters + numberOfNightPrinters)
-                .setStartColumnIndex(4)
-                .setEndColumnIndex(numberOfDaysOfMonth + 4), getColorByHEX("#ffffff"), "RIGHT", 11, false, 1));
-
         // Форматирование шапки
         requests.add(createCellStyleRequest(new GridRange()
                 .setSheetId(SHEET_ID)
@@ -298,6 +280,23 @@ public class GoogleSheetsService {
                 .setEndRowIndex(13 + marketsNumber + numberOfDayPrinters + numberOfNightPrinters)
                 .setStartColumnIndex(3)
                 .setEndColumnIndex(4)));
+
+        // Выравнивание по правому краю в ячейках статистики
+        requests.add(new Request().setRepeatCell(new RepeatCellRequest()
+                .setRange(new GridRange()
+                        .setSheetId(SHEET_ID)
+                        .setStartRowIndex(4)
+                        .setEndRowIndex(13 + marketsNumber + numberOfDayPrinters + numberOfNightPrinters)
+                        .setStartColumnIndex(4)
+                        .setEndColumnIndex(numberOfDaysOfMonth + 4))
+                .setCell(new CellData()
+                        .setUserEnteredFormat(new CellFormat()
+                                .setHorizontalAlignment("RIGHT")
+                                .setBackgroundColor(getColorByHEX("#ffffff"))
+                                .setNumberFormat(new NumberFormat()
+                                        .setType("NUMBER")
+                                        .setPattern("0"))
+                                .setBorders(new Borders().setTop(new Border().setStyle("SOLID").setWidth(1)).setBottom(new Border().setStyle("SOLID").setWidth(1)).setLeft(new Border().setStyle("SOLID").setWidth(1)).setRight(new Border().setStyle("SOLID").setWidth(1)))))));
 
         //ПАКЕТНЫЙ ЗАПРОС НА ОБНОВЛЕНИЕ ЯЧЕЕК ТАБЛИЦЫ
         try {
@@ -516,36 +515,33 @@ public class GoogleSheetsService {
     }
 
     public void addPackerStatistic(SheetId sheetId, PackerStatistic statistic) {
-
         updateLabelList();
+        List<ValueRange> data = new ArrayList<>();
         for (Map.Entry<Integer, String> entry : labelList.entrySet()) {
+            ValueRange vr = new ValueRange().setRange(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), entry.getKey()));
             if (entry.getValue().equals("WB MHC")) {
-                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getWb_mhc()))));
+                data.add(vr.setValues(List.of(List.of(statistic.getWb_mhc()))));
             }
             if (entry.getValue().equals("WB Signum")) {
-                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getWb_signum()))));
-
+                data.add(vr.setValues(List.of(List.of(statistic.getWb_signum()))));
             }
             if (entry.getValue().equals("WB Silicosha")) {
-                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getWb_silicosha()))));
-
+                data.add(vr.setValues(List.of(List.of(statistic.getWb_silicosha()))));
             }
             if (entry.getValue().equals("OZON MHC")) {
-                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getOzon()))));
-
+                data.add(vr.setValues(List.of(List.of(statistic.getOzon()))));
             }
             if (entry.getValue().equals("Yandex MHC")) {
-                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getYandex()))));
-
+                data.add(vr.setValues(List.of(List.of(statistic.getYandex()))));
             }
             if (entry.getValue().equals("WB PrintKid")) {
-                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getWb_printkid()))));
-
+                data.add(vr.setValues(List.of(List.of(statistic.getWb_printkid()))));
             }
             if (entry.getValue().equals("FBO")) {
-                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), entry.getKey()), new ValueRange().setValues(List.of(List.of(statistic.getFbo()))));
+                data.add(vr.setValues(List.of(List.of(statistic.getFbo()))));
             }
         }
+        batchUpdateValues(data, sheetId);
         log.info(String.format("БЫЛА ДОБАВЛЕНА СТАТИСТИКА СБОРЩИКА: %s", statistic));
     }
 
@@ -568,7 +564,16 @@ public class GoogleSheetsService {
 
         for (Map.Entry<Integer, String> entry : labelList.entrySet()) {
             if (entry.getValue().equals(statistic.getFio())) {
-                updateData(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), entry.getKey()), new ValueRange().setValues(List.of(List.of(String.format("%s/%s", statistic.getPrints_num(), statistic.getDefects_num())))));
+                try {
+                    BatchUpdateValuesRequest batchRequest = new BatchUpdateValuesRequest()
+                            .setValueInputOption("RAW")
+                            .setData(List.of(new ValueRange().setRange(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), entry.getKey())).setValues(List.of(List.of(String.format("%s/%s", statistic.getPrints_num(), statistic.getDefects_num()))))));
+                    sheetService.spreadsheets().values()
+                            .batchUpdate(SPREADSHEET_ID, batchRequest)
+                            .execute();
+                } catch (IOException e) {
+                    log.error(String.format("НЕ УДАЛОСЬ ВЫПОЛНИТЬ ОБНОВЛЕНИЕ ОСНОВНЫХ ТЕКСТОВЫХ ПОЛЕЙ ТАБЛИЦЫ '%s' ПО ПРИЧИНЕ: %s", sheetId.getTitle(), e.getMessage()));
+                }
                 log.info(String.format("БЫЛА ДОБАВЛЕНА СТАТИСТИКА ПЕЧАТНИКА %s - %s", statistic.getFio(), statistic));
                 break;
             }
@@ -664,9 +669,7 @@ public class GoogleSheetsService {
                         }
                     }
                     vr.setRange(String.format("%s!E%d:%s%d", sheetId.getTitle(), entry.getKey(), getColumnLetter(numberOfDaysOfMonth), entry.getKey()));
-                    log.info(String.format("%s!E%d:%s%d", sheetId.getTitle(), entry.getKey(), getColumnLetter(numberOfDaysOfMonth), entry.getKey()));
                     vr.setValues(List.of(Arrays.stream(statistic).toList()));
-                    log.info(List.of(Arrays.stream(statistic).toList()));
                 }
             }
             data.add(vr);
