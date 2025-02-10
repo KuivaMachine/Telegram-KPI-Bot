@@ -3,14 +3,17 @@ package org.example.googlesheetservice;
 import org.example.googlesheetservice.SheetsServices.GoogleSheetsService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
+
+
 
 @SpringBootApplication
-
+@ComponentScan(basePackages = {"org.example.postgresql", "org.example.googlesheetservice"})
+@EnableScheduling
 public class GoogleSheetServiceApplication {
+
 
     public static void main(String[] args) {
         SpringApplication.run(GoogleSheetServiceApplication.class, args);
