@@ -18,6 +18,7 @@ repositories {
 }
 
 dependencies {
+    implementation("io.github.cdimascio:java-dotenv:5.2.2")
     implementation("org.springframework.boot:spring-boot-starter")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

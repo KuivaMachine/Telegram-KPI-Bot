@@ -24,7 +24,7 @@ repositories {
 }
 
 dependencies {
-
+    implementation("io.github.cdimascio:java-dotenv:5.2.2")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("com.google.api-client:google-api-client:2.7.0")
     implementation ("com.google.oauth-client:google-oauth-client-jetty:1.34.1")
