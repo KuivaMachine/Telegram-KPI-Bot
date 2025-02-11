@@ -3,6 +3,7 @@ package org.example.googlesheetservice.SheetsServices;
 
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.*;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
 import org.example.googlesheetservice.Data.Months;
 import org.example.googlesheetservice.Data.PrinterStatistic;
@@ -44,7 +45,6 @@ public class GoogleSheetsService {
         this.sheetIdService = sheetIdService;
         this.postgres = postgres;
     }
-
 
     private int findSheetIdByTitle(String title) {
         try {

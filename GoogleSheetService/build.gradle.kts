@@ -24,6 +24,7 @@ repositories {
 }
 
 dependencies {
+	implementation("io.github.cdimascio:java-dotenv:5.2.2")
 
 	implementation(project(":PostgreSQL"))
 	implementation("org.springframework.boot:spring-boot-starter-web")
