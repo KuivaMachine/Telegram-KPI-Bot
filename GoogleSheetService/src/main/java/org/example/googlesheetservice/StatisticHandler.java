@@ -2,25 +2,23 @@ package org.example.googlesheetservice;
 
 
 import lombok.RequiredArgsConstructor;
-import org.example.googlesheetservice.Data.Months;
+import lombok.extern.log4j.Log4j2;
 import org.example.googlesheetservice.Data.PrinterStatistic;
 import org.example.googlesheetservice.SheetsServices.GoogleSheetsService;
 import org.example.postgresql.entity.PackerStatistic;
 import org.example.postgresql.entity.SheetId;
 import org.example.postgresql.service.DateService;
 import org.example.postgresql.service.SheetIdService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 
-
+@Log4j2
 @RequiredArgsConstructor
 @Component
 public class StatisticHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(StatisticHandler.class);
+
     private final SheetIdService sheetIdService;
     private final DateService dateService;
     private final GoogleSheetsService googleSheetsService;

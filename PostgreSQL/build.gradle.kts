@@ -32,6 +32,12 @@ dependencies {
     implementation("org.springframework:spring-jdbc:6.2.1")
     implementation("com.fasterxml.jackson.core:jackson-annotations:2.18.2")
 
+    implementation("org.springframework.boot:spring-boot-starter-log4j2")
+    modules {
+        module("org.springframework.boot:spring-boot-starter-logging") {
+            replacedBy("org.springframework.boot:spring-boot-starter-log4j2", "Use Log4j2 instead of Logback")
+        }
+    }
 
     annotationProcessor("org.projectlombok:lombok")
 }

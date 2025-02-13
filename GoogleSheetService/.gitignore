@@ -6,6 +6,7 @@ build/
 !**/src/main/**/build/
 **/src/test/**/build/
 /credential.json
+*.txt
 ### IntelliJ IDEA ###
 .idea
 *.iws
