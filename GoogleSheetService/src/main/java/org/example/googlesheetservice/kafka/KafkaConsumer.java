@@ -3,27 +3,27 @@ package org.example.googlesheetservice.kafka;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.example.googlesheetservice.Data.KafkaCommands;
 import org.example.googlesheetservice.Data.PrinterStatistic;
 import org.example.googlesheetservice.StatisticHandler;
 import org.example.postgresql.entity.PackerStatistic;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
+
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class KafkaConsumer {
     private final StatisticHandler statisticHandler;
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private static final Logger log = LoggerFactory.getLogger(KafkaConsumer.class);
+
     ConcurrentHashMap<KafkaCommands, Boolean> commandStates = new ConcurrentHashMap<>();
 
 

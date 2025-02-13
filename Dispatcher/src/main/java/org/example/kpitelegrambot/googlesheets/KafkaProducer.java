@@ -1,20 +1,20 @@
 package org.example.kpitelegrambot.googlesheets;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.example.postgresql.entity.PackerStatistic;
 import org.example.postgresql.entity.PrinterStatistic;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ExecutionException;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class KafkaProducer {
-    private static final Logger log = LoggerFactory.getLogger(KafkaProducer.class);
+
     public final KafkaTemplate<String, PrinterStatistic> kafkaTemplatePrinter;
     public final KafkaTemplate<String, PackerStatistic> kafkaTemplatePacker;
     public final KafkaTemplate<String, String> kafkaTemplateCommand;
