@@ -1,4 +1,5 @@
-package org.example.googlesheetservice.Data;
+package org.example.googlesheetservice.postgresql.entity;
+
 
 
 import com.fasterxml.jackson.annotation.JsonProperty;

@@ -1,4 +1,4 @@
-package org.example.googlesheetservice.Data;
+package org.example.googlesheetservice.postgresql.data;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

@@ -3,17 +3,16 @@ package org.example.googlesheetservice.SheetsServices;
 
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.*;
-import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
-import org.example.googlesheetservice.Data.Months;
-import org.example.googlesheetservice.Data.PrinterStatistic;
 import org.example.googlesheetservice.Data.RowColumn;
-import org.example.postgresql.DAO.PostgreSQLController;
-import org.example.postgresql.entity.Employee;
-import org.example.postgresql.entity.PackerStatistic;
-import org.example.postgresql.entity.SheetId;
-import org.example.postgresql.service.EmployeeService;
-import org.example.postgresql.service.SheetIdService;
+import org.example.googlesheetservice.postgresql.DAO.PostgreSQLController;
+import org.example.googlesheetservice.postgresql.data.Months;
+import org.example.googlesheetservice.postgresql.entity.Employee;
+import org.example.googlesheetservice.postgresql.entity.PackerStatistic;
+import org.example.googlesheetservice.postgresql.entity.PrinterStatistic;
+import org.example.googlesheetservice.postgresql.entity.SheetId;
+import org.example.googlesheetservice.postgresql.service.EmployeeService;
+import org.example.googlesheetservice.postgresql.service.SheetIdService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -825,9 +824,9 @@ public class GoogleSheetsService {
             Arrays.fill(statistic, "");
             for (Map.Entry<Integer, String> entry : labelList.entrySet()) {
                 if (entry.getValue().equals(employee.getFio())) {
-                    List<org.example.postgresql.entity.PrinterStatistic> stat_list = postgres.getPrinterStatisticByChatId(employee.getChatId(), sheetId.getTitle());
+                    List<PrinterStatistic> stat_list = postgres.getPrinterStatisticByChatId(employee.getChatId(), sheetId.getTitle());
                     if (stat_list != null) {
-                        for (org.example.postgresql.entity.PrinterStatistic ps : stat_list) {
+                        for (PrinterStatistic ps : stat_list) {
                             statistic[Integer.parseInt(ps.getDate().substring(8, 10)) - 1] = String.format("%s/%s", ps.getPrints_num(), ps.getDefects_num());
 
 

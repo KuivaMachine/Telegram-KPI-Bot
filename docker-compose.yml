@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+
+  # Сервис Dispatcher
+  dispatcher:
+    build:
+      context: ./Dispatcher
+      dockerfile: Dockerfile
+    container_name: KPI_MHC_APPLICATION
+    restart: on-failure
+    ports:
+      - ${PORT_DISPATCHER}:${PORT_DISPATCHER}
+    environment:
+     BOT_NAME: ${BOT_NAME}
+     BOT_TOKEN: ${BOT_TOKEN}
+     BOT_URL: ${BOT_URL}
+     PORT_DISPATCHER: ${PORT_DISPATCHER:-8084}
+
+     KAFKA_PORT: ${KAFKA_PORT}
+     KAFKA_KEY_SERIALIZER: ${KAFKA_KEY_SERIALIZER}
+     KAFKA_VALUE_SERIALIZER: ${KAFKA_VALUE_SERIALIZER}
+
+     DATASOURCE_URL: ${DATASOURCE_URL}
+     DATASOURCE_USERNAME: ${DATASOURCE_USERNAME}
+     DATASOURCE_PASSWORD: ${DATASOURCE_PASSWORD}
+     DATASOURCE_DRIVER_NAME: ${DATASOURCE_DRIVER_NAME}
+
+    networks:
+      - my-network
+
+networks:
+  my-network:
+    driver: bridge
