@@ -168,7 +168,7 @@ public class GoogleSheetsService {
         requests.add(createDimensionUpdateRequest(SHEET_ID, RowColumn.ROWS, 40, 1, 2));
         requests.add(createDimensionUpdateRequest(SHEET_ID, RowColumn.COLUMNS, 340, 1, 2));
         requests.add(createDimensionUpdateRequest(SHEET_ID, RowColumn.COLUMNS, 90, 2, 4));
-        requests.add(createDimensionUpdateRequest(SHEET_ID, RowColumn.COLUMNS, 60, 4, numberOfDaysOfMonth + 4));
+        requests.add(createDimensionUpdateRequest(SHEET_ID, RowColumn.COLUMNS, 70, 4, numberOfDaysOfMonth + 4));
 
         // Форматирование всей таблицы
         requests.add(createCellStyleRequest(new GridRange()
@@ -720,6 +720,30 @@ public class GoogleSheetsService {
             if (!value.isEmpty()) {
                 if (value.getFirst().equals(statistic.getFio())) {
                     isEmployeeInTable = true;
+                    try {
+                        List<ValueRange> data = new ArrayList<>();
+                        data.add(
+                                new ValueRange()
+                                        .setRange(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), values.indexOf(value) + 1))
+                                        .setValues(List.of(List.of(String.format("%s/%s", statistic.getPrints_num(), statistic.getDefects_num())))));
+//                    String range = String.format("%s%d:%s%d", getColumnLetter(statistic.getDate()),
+//                            8 + marketsNumber, getColumnLetter(statistic.getDate()),
+//                            7 + marketsNumber + numberOfDayPrinters);
+//
+//                    data.add(
+//                            new ValueRange()
+//                                    .setRange(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), 8 + marketsNumber + numberOfDayPrinters))
+//                                    .setValues(List.of(List.of(String.format("=СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"^(\\d+)\"));0)))&\"/\"&ОКРУГЛ(СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s;\"\\/(\\d+)\"));0))))", range, range)))));
+                        BatchUpdateValuesRequest batchRequest = new BatchUpdateValuesRequest()
+                                .setValueInputOption("USER_ENTERED")
+                                .setData(data);
+                        sheetService.spreadsheets().values()
+                                .batchUpdate(SPREADSHEET_ID, batchRequest)
+                                .execute();
+                    } catch (IOException e) {
+                        log.error(String.format("НЕ УДАЛОСЬ ВЫПОЛНИТЬ ОБНОВЛЕНИЕ ОСНОВНЫХ ТЕКСТОВЫХ ПОЛЕЙ ТАБЛИЦЫ '%s' ПО ПРИЧИНЕ: %s", sheetId.getTitle(), e.getMessage()));
+                    }
+                    log.info(String.format("БЫЛА ДОБАВЛЕНА СТАТИСТИКА ПЕЧАТНИКА В ЯЧЕЙКУ %s %s - %s", String.format("%s%d", getColumnLetter(statistic.getDate()), values.indexOf(value) + 1), statistic.getFio(), statistic));
                     break;
                 }
             }
@@ -731,21 +755,7 @@ public class GoogleSheetsService {
 
         for (Map.Entry<Integer, String> entry : labelList.entrySet()) {
             if (entry.getValue().equals(statistic.getFio())) {
-                try {
-                    List<ValueRange> data = new ArrayList<>();
-                    data.add(new ValueRange().setRange(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), entry.getKey())).setValues(List.of(List.of(String.format("%s/%s", statistic.getPrints_num(), statistic.getDefects_num())))));
-                    String range = String.format("%s%d:%s%d", getColumnLetter(statistic.getDate()), 8 + marketsNumber, getColumnLetter(statistic.getDate()), 7 + marketsNumber + numberOfDayPrinters);
-                    data.add(new ValueRange().setRange(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), 8 + marketsNumber + numberOfDayPrinters)).setValues(List.of(List.of(String.format("=СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"^(\\d+)\"));0)))&\"/\"&ОКРУГЛ(СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s;\"\\/(\\d+)\"));0))))", range, range)))));
-                    BatchUpdateValuesRequest batchRequest = new BatchUpdateValuesRequest()
-                            .setValueInputOption("USER_ENTERED")
-                            .setData(data);
-                    sheetService.spreadsheets().values()
-                            .batchUpdate(SPREADSHEET_ID, batchRequest)
-                            .execute();
-                } catch (IOException e) {
-                    log.error(String.format("НЕ УДАЛОСЬ ВЫПОЛНИТЬ ОБНОВЛЕНИЕ ОСНОВНЫХ ТЕКСТОВЫХ ПОЛЕЙ ТАБЛИЦЫ '%s' ПО ПРИЧИНЕ: %s", sheetId.getTitle(), e.getMessage()));
-                }
-                log.info(String.format("БЫЛА ДОБАВЛЕНА СТАТИСТИКА ПЕЧАТНИКА %s - %s", statistic.getFio(), statistic));
+
                 break;
             }
         }

@@ -42,4 +42,8 @@ public class Employee {
     @Column(name = "work_time")
     DayNight workTime;
 
+    @Override
+    public String toString() {
+        return "Employee{"+ fio + '}';
+    }
 }
