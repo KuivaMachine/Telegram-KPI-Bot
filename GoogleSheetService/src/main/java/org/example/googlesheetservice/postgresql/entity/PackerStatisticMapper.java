@@ -11,7 +11,7 @@ public class PackerStatisticMapper implements RowMapper<PackerStatistic> {
         String date = rs.getString("date");
         String wb_mhc = rs.getString("wb_mhc");
         String wb_signum = rs.getString("wb_signum");
-        String wb_silicosha =rs.getString("wb_silicosha"); ;
+        String wb_silicosha = rs.getString("wb_silicosha");
         String ozon = rs.getString("ozon");
         String yandex = rs.getString("yandex");
         String wb_printkid = rs.getString("wb_printkid");

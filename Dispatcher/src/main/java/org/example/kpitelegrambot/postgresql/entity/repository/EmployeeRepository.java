@@ -1,6 +1,6 @@
-package org.example.postgresql.entity.repository;
+package org.example.kpitelegrambot.postgresql.entity.repository;
 
-import org.example.postgresql.entity.Employee;
+import org.example.kpitelegrambot.postgresql.entity.Employee;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

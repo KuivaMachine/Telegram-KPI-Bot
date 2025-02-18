@@ -1,14 +1,14 @@
-package org.example.postgresql.service.impl;
+package org.example.kpitelegrambot.postgresql.service.impl;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.example.postgresql.data.DayNight;
-import org.example.postgresql.data.EmployeePost;
-import org.example.postgresql.data.EmployeeStatus;
-import org.example.postgresql.entity.Employee;
-import org.example.postgresql.entity.repository.EmployeeRepository;
-import org.example.postgresql.service.EmployeeService;
+import org.example.kpitelegrambot.postgresql.data.DayNight;
+import org.example.kpitelegrambot.postgresql.data.EmployeePost;
+import org.example.kpitelegrambot.postgresql.data.EmployeeStatus;
+import org.example.kpitelegrambot.postgresql.entity.Employee;
+import org.example.kpitelegrambot.postgresql.entity.repository.EmployeeRepository;
+import org.example.kpitelegrambot.postgresql.service.EmployeeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -44,7 +44,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     public List<Employee> getListOfDayPrinters() {
         List<Employee> dayEmployees = new ArrayList<>();
         for (Employee employee : employeeRepository.findAll()) {
-                if(employee.getWorkTime()==DayNight.DAY){
+                if(employee.getWorkTime()== DayNight.DAY){
                     dayEmployees.add(employee);
             }
         }
@@ -55,7 +55,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     public List<Employee> getListOfNightPrinters() {
         List<Employee> nightEmployees = new ArrayList<>();
         for (Employee employee : employeeRepository.findAll()) {
-            if(employee.getWorkTime()==DayNight.NIGHT){
+            if(employee.getWorkTime()== DayNight.NIGHT){
                 nightEmployees.add(employee);
             }
         }

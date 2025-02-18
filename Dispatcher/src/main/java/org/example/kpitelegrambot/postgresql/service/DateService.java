@@ -1,4 +1,4 @@
-package org.example.postgresql.service;
+package org.example.kpitelegrambot.postgresql.service;
 
 import org.springframework.stereotype.Service;
 
@@ -33,7 +33,7 @@ public class DateService {
 
     }
 
-    public java.sql.Date getLocalDate() {
+    public Date getLocalDate() {
         LocalDate localDate = LocalDate.now();
         return Date.valueOf(localDate);
     }

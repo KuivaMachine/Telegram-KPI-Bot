@@ -1,6 +1,6 @@
-package org.example.postgresql.service;
+package org.example.kpitelegrambot.postgresql.service;
 
-import org.example.postgresql.entity.SheetId;
+import org.example.kpitelegrambot.postgresql.entity.SheetId;
 
 public interface SheetIdService {
     void saveSheetId(SheetId sheetId);

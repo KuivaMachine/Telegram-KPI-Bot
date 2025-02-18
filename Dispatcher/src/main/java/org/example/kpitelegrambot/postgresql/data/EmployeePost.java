@@ -1,4 +1,4 @@
-package org.example.postgresql.data;
+package org.example.kpitelegrambot.postgresql.data;
 
 public enum EmployeePost {
     PRINTER, PACKER, UNKNOWN
