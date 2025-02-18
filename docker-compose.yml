@@ -1,0 +1,122 @@
+
+services:
+
+  # Сервис Dispatcher
+  dispatcher:
+    build:
+      context: ./Dispatcher
+      dockerfile: Dockerfile
+    container_name: Dispatcher
+    restart: unless-stopped
+    ports:
+      - ${PORT_DISPATCHER}:${PORT_DISPATCHER}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+     BOT_NAME: ${BOT_NAME}
+     BOT_TOKEN: ${BOT_TOKEN}
+     BOT_URL: ${BOT_URL}
+     PORT_DISPATCHER: ${PORT_DISPATCHER:-8084}
+     KAFKA_PORT: ${KAFKA_PORT}
+     KAFKA_HOSTNAME: ${KAFKA_HOSTNAME}
+     KAFKA_KEY_SERIALIZER: ${KAFKA_KEY_SERIALIZER}
+     KAFKA_VALUE_SERIALIZER: ${KAFKA_VALUE_SERIALIZER}
+     DATASOURCE_URL: ${DATASOURCE_URL}
+     DATASOURCE_USERNAME: ${DATASOURCE_USERNAME}
+     DATASOURCE_PASSWORD: ${DATASOURCE_PASSWORD}
+     DATASOURCE_DRIVER_NAME: ${DATASOURCE_DRIVER_NAME}
+    volumes:
+      - ./.env:/app/.env  # Копируем .env в /app
+    networks:
+      - my-network
+
+  # Сервис GoogleSheetService
+  googlesheetservice:
+    build:
+      context: ./GoogleSheetService
+      dockerfile: Dockerfile
+    container_name: GoogleSheetService
+    restart: unless-stopped
+    ports:
+      - ${PORT_GOOGLESHEETS}:${PORT_GOOGLESHEETS}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT_GOOGLESHEETS: ${PORT_GOOGLESHEETS}
+      CREDENTIALS_FILE_PATH: ${CREDENTIALS_FILE_PATH}
+      KAFKA_PORT: ${KAFKA_PORT}
+      KAFKA_HOSTNAME: ${KAFKA_HOSTNAME}
+      SPREADSHEET_ID: ${SPREADSHEET_ID}
+      DATASOURCE_URL: ${DATASOURCE_URL}
+      DATASOURCE_USERNAME: ${DATASOURCE_USERNAME}
+      DATASOURCE_PASSWORD: ${DATASOURCE_PASSWORD}
+      DATASOURCE_DRIVER_NAME: ${DATASOURCE_DRIVER_NAME}
+    volumes:
+      - ./.env:/app/.env  # Копируем .env в /app
+    networks:
+      - my-network
+
+
+
+  kafka:
+    image: bitnami/kafka:latest
+    container_name: kafka
+    ports:
+      - ${KAFKA_PORT}:${KAFKA_PORT}
+    environment:
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_KRAFT_CLUSTER_ID=kuivamachineclusterid
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9091
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9091
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://${KAFKA_HOSTNAME}:${KAFKA_PORT}
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+
+#    healthcheck:
+#      test: [ "CMD-SHELL", "kafka-topics --bootstrap-server kafka:9092 --list" ]
+#      interval: 30s
+#      timeout: 15s
+#      retries: 15
+    restart: unless-stopped
+    volumes:
+      - kafka_data:/bitnami/kafka
+    networks:
+      - my-network
+
+
+  postgres:
+    image: postgres:17.2
+    container_name: postgres
+    environment:
+      POSTGRES_USER: ${DATASOURCE_USERNAME}
+      POSTGRES_PASSWORD: ${DATASOURCE_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-KPI_DB}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DATASOURCE_USERNAME} -d ${POSTGRES_DB} -h 127.0.0.1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    ports:
+      - ${PORT_POSTGRES}:5432
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/postgres
+    networks:
+      - my-network
+
+
+
+volumes:
+  kafka_data:
+    driver: local
+  postgres_data:
+    driver: local
+
+networks:
+  my-network:
+    driver: bridge

@@ -2,8 +2,8 @@ package org.example.kpitelegrambot.googlesheets;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.example.postgresql.entity.PackerStatistic;
-import org.example.postgresql.entity.PrinterStatistic;
+import org.example.kpitelegrambot.postgresql.entity.PackerStatistic;
+import org.example.kpitelegrambot.postgresql.entity.PrinterStatistic;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
@@ -40,13 +40,16 @@ public class KafkaProducer {
     }
 
 
-    public void send(String topic, String command) {
+    public boolean send(String topic, String command) {
         SendResult<String, String> result = null;
         try {
             result = kafkaTemplateCommand.send(topic, command).get();
+            log.info(result.getRecordMetadata().toString());
+            return true;
         } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);
+            log.error(String.format("НЕ УДАЛОСЬ ОТПРАВИТЬ КОМАНДУ '%s' ПО ПРИЧИНЕ - %s", command, e.getMessage()));
+            return false;
         }
-        log.info(result.getRecordMetadata().toString());
+
     }
 }

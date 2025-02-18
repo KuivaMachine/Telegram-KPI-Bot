@@ -3,7 +3,7 @@ package org.example.googlesheetservice;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.example.googlesheetservice.SheetsServices.GoogleSheetsService;
-import org.example.postgresql.entity.SheetId;
+import org.example.googlesheetservice.postgresql.entity.SheetId;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import java.time.LocalDate;

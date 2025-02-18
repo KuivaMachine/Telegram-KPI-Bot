@@ -7,14 +7,14 @@ import org.example.kpitelegrambot.bot.keyboards.InlineKeyboardFactory;
 import org.example.kpitelegrambot.bot.keyboards.ReplyKeyboardFactory;
 import org.example.kpitelegrambot.data.ButtonLabels;
 import org.example.kpitelegrambot.googlesheets.KafkaProducer;
-import org.example.postgresql.DAO.PostgreSQLController;
-import org.example.postgresql.data.DayNight;
-import org.example.postgresql.data.EmployeePost;
-import org.example.postgresql.data.EmployeeStatus;
-import org.example.postgresql.entity.Employee;
-import org.example.postgresql.entity.PrinterStatistic;
-import org.example.postgresql.service.DateService;
-import org.example.postgresql.service.EmployeeService;
+import org.example.kpitelegrambot.postgresql.DAO.PostgreSQLController;
+import org.example.kpitelegrambot.postgresql.data.DayNight;
+import org.example.kpitelegrambot.postgresql.data.EmployeePost;
+import org.example.kpitelegrambot.postgresql.data.EmployeeStatus;
+import org.example.kpitelegrambot.postgresql.entity.Employee;
+import org.example.kpitelegrambot.postgresql.entity.PrinterStatistic;
+import org.example.kpitelegrambot.postgresql.service.DateService;
+import org.example.kpitelegrambot.postgresql.service.EmployeeService;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -111,16 +111,23 @@ public class CallbackQueryHandler implements Handler {
         return sendMessage;
     }
 
-    private SendMessage addNewPacker(SendMessage sendMessage, Employee currentEmployee) {
+    private SendMessage  addNewPacker(SendMessage sendMessage, Employee currentEmployee) {
         currentEmployee.setJob(EmployeePost.PACKER);
         currentEmployee.setStatus(EmployeeStatus.SAVED);
         employeeService.save(currentEmployee);
-        kafkaProducer.send("commands", "UPDATE");
-        sendMessage.setText("""
+        if (kafkaProducer.send("commands", "UPDATE")){
+            sendMessage.setText("""
                 Отлично 👍 Чтобы записать статистику,\s
                 нажмите «Добавить новую статистику»
                 """);
-        sendMessage.setReplyMarkup(ReplyKeyboardFactory.getAddStatKeyboard());
+            sendMessage.setReplyMarkup(ReplyKeyboardFactory.getAddStatKeyboard());
+        }else{
+            sendMessage.setText("""
+                Отлично 👍 Чтобы записать статистику,\s
+                нажмите «Добавить новую статистику»
+                На сервере небольшая проблемка, скиньте скриншот сообщения ему - @olezha_zaostrovtsev
+                """);
+        }
         return sendMessage;
     }
 
