@@ -64,7 +64,7 @@ public class GoogleSheetsService {
 
     private int generateSheetId() {
         Random random = new Random();
-        int length = 7 + random.nextInt(5); // 7 + (0..4) = 7..11
+        int length = 3 + random.nextInt(5); // 7 + (0..4) = 7..11
         int min = (int) Math.pow(10, length - 1); // Минимальное значение для длины
         int max = (int) Math.pow(10, length) - 1; // Максимальное значение для длины
         return min + random.nextInt(max - min + 1);
@@ -94,7 +94,7 @@ public class GoogleSheetsService {
             sheetService.spreadsheets().batchUpdate(SPREADSHEET_ID, batchUpdateRequest).execute();
             sheetIdService.saveSheetId(new SheetId(sheetId, sheetTitle));
             log.info(String.format("СОЗДАЛ И СОХРАНИЛ НОВУЮ ТАБЛИЦУ '%s', C ID %d", sheetTitle, sheetId));
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error(String.format("ОШИБКА ПРИ СОЗДАНИИ ТАБЛИЦЫ С ID %d - %s", sheetId, e.getMessage()));
         }
         return new SheetId(sheetId, sheetTitle);
@@ -143,7 +143,7 @@ public class GoogleSheetsService {
     }
 
 
-    private void updateTable2(SheetId sheetId) {
+    private void updateTable(SheetId sheetId) {
         int SHEET_ID = sheetId.getSheetId();
         String title = sheetId.getTitle();
         this.numberOfDaysOfMonth = postgres.getFirstAndLastDayOfMonth(title).getFirst().lengthOfMonth();
@@ -322,6 +322,15 @@ public class GoogleSheetsService {
                 .setStartColumnIndex(3)
                 .setEndColumnIndex(4)));
 
+        // Создаем запрос для закрепления строк
+        requests.add(new Request().setUpdateSheetProperties(new UpdateSheetPropertiesRequest()
+                .setProperties(new SheetProperties()
+                        .setSheetId(SHEET_ID)
+                        .setGridProperties(new GridProperties()
+                                        .setFrozenRowCount(3)
+                                //.setFrozenColumnCount(frozenColumnCount)
+                        ))
+                .setFields("gridProperties.frozenRowCount")));
 
         //ПАКЕТНЫЙ ЗАПРОС НА ОБНОВЛЕНИЕ ЯЧЕЕК ТАБЛИЦЫ
         try {
@@ -518,7 +527,7 @@ public class GoogleSheetsService {
         for (int i = 1; i <= numberOfDaysOfMonth; i++) {
             String nightCell = String.format("%s%d",getColumnLetter(i), 11 + numberOfNightPrinters+ marketsNumber + numberOfDayPrinters);
             String dayCell = String.format("%s%d",getColumnLetter(i),  8 + marketsNumber + numberOfDayPrinters);
-            formulaGeneralPrinter.add(String.format("=ЕСЛИ(СЧЁТЗ(%s;%s)=0; \"\";СУММ(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"^(\\d+)\"));0); ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"^(\\d+)\"));0)) & \"/\" & ОКРУГЛ(СУММ(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"\\/(\\d+)\"));0); ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"\\/(\\d+)\"));0));0))",dayCell,nightCell,dayCell,nightCell,dayCell,nightCell));
+            formulaGeneralPrinter.add(String.format("=ЕСЛИ(И(REGEXMATCH(%s; \"\\d+/\\d+\");REGEXMATCH(%s; \"\\d+/\\d+\"));СУММ(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"^(\\d+)\"));0); ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"^(\\d+)\"));0)) & \"/\" & ОКРУГЛ(СУММ(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"\\/(\\d+)\"));0); ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"\\/(\\d+)\"));0));0);ЕСЛИ(REGEXMATCH(%s; \"\\d+/\\d+\");%s;ЕСЛИ(REGEXMATCH(%s; \"\\d+/\\d+\");%s;\"\")))", dayCell, nightCell, dayCell, nightCell, dayCell, nightCell, dayCell, dayCell, nightCell, nightCell));
         }
         data.add(new ValueRange()
                 .setRange(String.format("%s!E%d:%s%d", title, 13 + numberOfNightPrinters+ marketsNumber + numberOfDayPrinters, getColumnLetter(numberOfDaysOfMonth), 8 + marketsNumber +13 + numberOfNightPrinters+ marketsNumber+ numberOfDayPrinters))
@@ -793,7 +802,7 @@ public class GoogleSheetsService {
         List<Employee> nightPrintersList = employeeService.getListOfNightPrinters();
         List<PackerStatistic> packerStatisticList = postgres.getAllPackerStatistics(sheetId.getTitle());
         updateLabelList();
-        updateTable2(sheetId);
+        updateTable(sheetId);
         updateAllStatistic(sheetId, dayPrintersList, nightPrintersList, packerStatisticList);
         log.info(String.format("ТАБЛИЦА '%s' ПОЛНОСТЬЮ ОБНОВЛЕНА АКТУАЛЬНЫМИ ДАННЫМИ", sheetId.getTitle()));
     }
