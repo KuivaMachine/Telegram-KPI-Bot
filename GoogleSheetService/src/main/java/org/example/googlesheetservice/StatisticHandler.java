@@ -3,12 +3,12 @@ package org.example.googlesheetservice;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.example.googlesheetservice.Data.PrinterStatistic;
 import org.example.googlesheetservice.SheetsServices.GoogleSheetsService;
-import org.example.postgresql.entity.PackerStatistic;
-import org.example.postgresql.entity.SheetId;
-import org.example.postgresql.service.DateService;
-import org.example.postgresql.service.SheetIdService;
+import org.example.googlesheetservice.postgresql.entity.PackerStatistic;
+import org.example.googlesheetservice.postgresql.entity.PrinterStatistic;
+import org.example.googlesheetservice.postgresql.entity.SheetId;
+import org.example.googlesheetservice.postgresql.service.DateService;
+import org.example.googlesheetservice.postgresql.service.SheetIdService;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;

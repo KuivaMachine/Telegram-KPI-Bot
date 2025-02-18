@@ -23,6 +23,6 @@ dependencies {
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
-tasks.withType<Test> {
-	useJUnitPlatform()
+tasks.bootJar {
+	mainClass.set("org.example.kpitelegrambot.DispatcherApplication") // Укажите ваш главный класс
 }

@@ -11,8 +11,7 @@ import org.springframework.context.annotation.ComponentScan;
 @Log4j2
 @SpringBootApplication
 @EnableConfigurationProperties({TelegramBotConfig.class})
-@ComponentScan(basePackages = {
-        "org.example.postgresql","org.example.kpitelegrambot"})
+
 
 public class DispatcherApplication {
 
@@ -21,7 +20,6 @@ public class DispatcherApplication {
         dotenv.entries().forEach(entry -> System.setProperty(entry.getKey(), entry.getValue()));
         SpringApplication.run(DispatcherApplication.class, args);
 
-        log.error("ЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫ");
 
 
     }
