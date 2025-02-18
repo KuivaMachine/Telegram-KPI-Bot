@@ -18,22 +18,8 @@
     </Appenders>
 
     <Loggers>
-        <!-- Отключаем лишние логи Spring и других библиотек -->
-        <Logger name="org.springframework" level="WARN" additivity="false">
-            <AppenderRef ref="File"/>
-        </Logger>
-        <Logger name="org.hibernate" level="WARN" additivity="false">
 
-            <AppenderRef ref="File"/>
-        </Logger>
-        <Logger name="com.zaxxer.hikari" level="WARN" additivity="false">
-            <AppenderRef ref="File"/>
-        </Logger>
-        <Logger name="org.apache.kafka" level="WARN" additivity="false">
-            <AppenderRef ref="Console"/>
-            <!-- Исключаем логи Kafka из файла -->
-            <AppenderRef ref="File" level="ERROR"/>
-        </Logger>
+
         <!-- Корневой логгер -->
         <Root level="info">
             <AppenderRef ref="Console"/>

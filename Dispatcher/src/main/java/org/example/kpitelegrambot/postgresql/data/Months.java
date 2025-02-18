@@ -1,4 +1,4 @@
-package org.example.postgresql.data;
+package org.example.kpitelegrambot.postgresql.data;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

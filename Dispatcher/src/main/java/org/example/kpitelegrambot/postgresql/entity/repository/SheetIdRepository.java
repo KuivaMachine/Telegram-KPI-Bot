@@ -1,6 +1,6 @@
-package org.example.postgresql.entity.repository;
+package org.example.kpitelegrambot.postgresql.entity.repository;
 
-import org.example.postgresql.entity.SheetId;
+import org.example.kpitelegrambot.postgresql.entity.SheetId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

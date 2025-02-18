@@ -1,4 +1,4 @@
-package org.example.postgresql.DAO;
+package org.example.kpitelegrambot.postgresql.DAO;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

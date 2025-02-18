@@ -1,4 +1,4 @@
-package org.example.postgresql.entity;
+package org.example.kpitelegrambot.postgresql.entity;
 
 import org.springframework.jdbc.core.RowMapper;
 

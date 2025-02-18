@@ -1,9 +1,9 @@
-package org.example.postgresql.DAO;
+package org.example.kpitelegrambot.postgresql.DAO;
 
 import lombok.extern.log4j.Log4j2;
-import org.example.postgresql.data.Months;
-import org.example.postgresql.entity.*;
-import org.example.postgresql.service.DateService;
+import org.example.kpitelegrambot.postgresql.data.Months;
+import org.example.kpitelegrambot.postgresql.entity.*;
+import org.example.kpitelegrambot.postgresql.service.DateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;

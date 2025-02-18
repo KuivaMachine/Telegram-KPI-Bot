@@ -50,6 +50,6 @@ dependencies {
 	}
 }
 
-tasks.withType<Test> {
-	useJUnitPlatform()
+tasks.bootJar {
+	mainClass.set("org.example.googlesheetservice.GoogleSheetServiceApplication") // Укажите ваш главный класс
 }

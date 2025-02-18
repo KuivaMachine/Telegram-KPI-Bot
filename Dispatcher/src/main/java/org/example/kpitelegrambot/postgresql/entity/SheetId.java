@@ -1,4 +1,5 @@
-package org.example.postgresql.entity;
+package org.example.kpitelegrambot.postgresql.entity;
+
 
 import jakarta.persistence.*;
 import lombok.*;

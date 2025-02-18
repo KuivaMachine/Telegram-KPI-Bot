@@ -1,5 +1,8 @@
 package org.example.googlesheetservice.postgresql.data;
 
+import lombok.Getter;
+
+@Getter
 public enum DayNight {
     DAY("День \uD83C\uDF1E", "day"), NIGHT("Ночь \uD83C\uDF19", "night"), UNKNOWN ("UNKNOWN", "UNKNOWN");
 
@@ -12,11 +15,4 @@ public enum DayNight {
 
     }
 
-    public String getCallback() {
-        return callback;
-    }
-
-    public String getLabel() {
-        return label;
-    }
 }

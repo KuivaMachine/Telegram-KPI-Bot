@@ -2,11 +2,11 @@
 FROM openjdk:21-jdk-slim AS build
 
 # Устанавливаем рабочую директорию
-WORKDIR /dispatcher
+WORKDIR /googlesheetservice
 
 # Копируем исходный код
 COPY . .
-
+#COPY ../.env /shared/
 # Собираем проект
 RUN ./gradlew clean bootJar
 
@@ -17,7 +17,7 @@ FROM openjdk:21-jdk-slim
 WORKDIR /app
 
 # Копируем JAR-файл из этапа сборки
-COPY --from=build /dispatcher/build/libs/Dispatcher-0.0.1-SNAPSHOT.jar dispatcher.jar
-
+COPY --from=build /googlesheetservice/build/libs/GoogleSheetService-0.0.1-SNAPSHOT.jar googlesheetservice.jar
+#COPY --from=build /shared/.env /googlesheetservice/.env
 # Команда для запуска приложения
-ENTRYPOINT ["java", "-jar", "dispatcher.jar"]
+ENTRYPOINT ["java", "-jar", "googlesheetservice.jar"]

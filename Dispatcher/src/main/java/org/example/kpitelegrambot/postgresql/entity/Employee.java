@@ -1,13 +1,12 @@
-package org.example.postgresql.entity;
-
+package org.example.kpitelegrambot.postgresql.entity;
 
 
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.example.postgresql.data.DayNight;
-import org.example.postgresql.data.EmployeePost;
-import org.example.postgresql.data.EmployeeStatus;
+import org.example.kpitelegrambot.postgresql.data.DayNight;
+import org.example.kpitelegrambot.postgresql.data.EmployeePost;
+import org.example.kpitelegrambot.postgresql.data.EmployeeStatus;
 
 @Getter
 @Setter

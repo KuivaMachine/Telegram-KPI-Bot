@@ -1,12 +1,9 @@
-package org.example.postgresql.entity;
+package org.example.kpitelegrambot.postgresql.entity;
 
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import lombok.experimental.FieldDefaults;
 
 
 @Getter

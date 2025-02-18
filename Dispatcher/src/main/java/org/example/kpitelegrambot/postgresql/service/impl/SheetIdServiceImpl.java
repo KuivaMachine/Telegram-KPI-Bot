@@ -1,12 +1,12 @@
-package org.example.postgresql.service.impl;
+package org.example.kpitelegrambot.postgresql.service.impl;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.log4j.Log4j2;
-import org.example.postgresql.entity.SheetId;
-import org.example.postgresql.entity.repository.SheetIdRepository;
-import org.example.postgresql.service.SheetIdService;
+import org.example.kpitelegrambot.postgresql.entity.SheetId;
+import org.example.kpitelegrambot.postgresql.entity.repository.SheetIdRepository;
+import org.example.kpitelegrambot.postgresql.service.SheetIdService;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;

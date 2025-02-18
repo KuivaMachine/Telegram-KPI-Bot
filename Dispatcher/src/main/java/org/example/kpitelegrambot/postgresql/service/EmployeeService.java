@@ -1,9 +1,8 @@
-package org.example.postgresql.service;
+package org.example.kpitelegrambot.postgresql.service;
 
-import org.example.postgresql.entity.Employee;
+import org.example.kpitelegrambot.postgresql.entity.Employee;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Component
