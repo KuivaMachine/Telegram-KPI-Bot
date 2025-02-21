@@ -1,6 +1,7 @@
 
 .gradle
-
+/build
+!Dispatcher/build/libs
 
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
