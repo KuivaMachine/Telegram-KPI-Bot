@@ -1,6 +1,5 @@
-
+version: '3.8'
 services:
-
   # Сервис Dispatcher
   dispatcher:
     build:
@@ -13,21 +12,24 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
     environment:
-     BOT_NAME: ${BOT_NAME}
-     BOT_TOKEN: ${BOT_TOKEN}
-     BOT_URL: ${BOT_URL}
-     PORT_DISPATCHER: ${PORT_DISPATCHER:-8084}
-     KAFKA_PORT: ${KAFKA_PORT}
-     KAFKA_HOSTNAME: ${KAFKA_HOSTNAME}
-     KAFKA_KEY_SERIALIZER: ${KAFKA_KEY_SERIALIZER}
-     KAFKA_VALUE_SERIALIZER: ${KAFKA_VALUE_SERIALIZER}
-     DATASOURCE_URL: ${DATASOURCE_URL}
-     DATASOURCE_USERNAME: ${DATASOURCE_USERNAME}
-     DATASOURCE_PASSWORD: ${DATASOURCE_PASSWORD}
-     DATASOURCE_DRIVER_NAME: ${DATASOURCE_DRIVER_NAME}
+      BOT_NAME: ${BOT_NAME}
+      BOT_TOKEN: ${BOT_TOKEN}
+      BOT_URL: ${BOT_URL}
+      PORT_DISPATCHER: ${PORT_DISPATCHER:-8084}
+      KAFKA_PORT: ${KAFKA_PORT}
+      KAFKA_HOSTNAME: ${KAFKA_HOSTNAME}
+      KAFKA_KEY_SERIALIZER: ${KAFKA_KEY_SERIALIZER}
+      KAFKA_VALUE_SERIALIZER: ${KAFKA_VALUE_SERIALIZER}
+      DATASOURCE_URL: ${DATASOURCE_URL}
+      DATASOURCE_USERNAME: ${DATASOURCE_USERNAME}
+      DATASOURCE_PASSWORD: ${DATASOURCE_PASSWORD}
+      DATASOURCE_DRIVER_NAME: ${DATASOURCE_DRIVER_NAME}
     volumes:
       - ./.env:/app/.env  # Копируем .env в /app
+      - dispatcher_logs:/app/logs  # Именованный volume для логов
     networks:
       - my-network
 
@@ -43,6 +45,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
     environment:
       PORT_GOOGLESHEETS: ${PORT_GOOGLESHEETS}
       CREDENTIALS_FILE_PATH: ${CREDENTIALS_FILE_PATH}
@@ -55,11 +59,11 @@ services:
       DATASOURCE_DRIVER_NAME: ${DATASOURCE_DRIVER_NAME}
     volumes:
       - ./.env:/app/.env  # Копируем .env в /app
+      - googlesheetservice_logs:/app/logs  # Именованный volume для логов
     networks:
       - my-network
 
-
-
+  # Сервис Kafka
   kafka:
     image: bitnami/kafka:latest
     container_name: kafka
@@ -75,19 +79,19 @@ services:
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
       - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
-
-#    healthcheck:
-#      test: [ "CMD-SHELL", "kafka-topics --bootstrap-server kafka:9092 --list" ]
-#      interval: 30s
-#      timeout: 15s
-#      retries: 15
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
     volumes:
-      - kafka_data:/bitnami/kafka
+      - kafka_data:/bitnami/kafka  # Именованный volume для данных Kafka
     networks:
       - my-network
 
-
+  # Сервис PostgreSQL
   postgres:
     image: postgres:17.2
     container_name: postgres
@@ -105,18 +109,22 @@ services:
       - ${PORT_POSTGRES}:5432
     restart: unless-stopped
     volumes:
-      - postgres_data:/postgres
+      - postgres_data:/var/lib/postgresql/data  # Именованный volume для данных PostgreSQL
     networks:
       - my-network
 
-
-
+# Определение volumes
 volumes:
   kafka_data:
     driver: local
   postgres_data:
     driver: local
+  dispatcher_logs:
+    driver: local
+  googlesheetservice_logs:
+    driver: local
 
+# Сеть
 networks:
   my-network:
     driver: bridge

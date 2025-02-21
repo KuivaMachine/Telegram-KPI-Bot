@@ -3,7 +3,7 @@
     <Appenders>
         <!-- Консольный аппендер -->
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%clr{%d{yyyy-MM-dd HH:mm:ss}}{faint} %clr{%5p} %clr{[%15.15t]}{faint}%clr{%-40.40c{1.}}{cyan}%clr{:}{faint}%msg%n"/>
+            <PatternLayout pattern="%clr{%d{yyyy-MM-dd HH:mm:ss}}{faint} %clr{%4p} %clr{[%15.15t]}{faint}%clr{%-40.40c{1.}}{cyan}%clr{:}{faint}%msg%n"/>
         </Console>
 
         <!-- Файловый аппендер для общего лога -->
