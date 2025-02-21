@@ -1,6 +1,6 @@
 # Этап сборки
 FROM openjdk:21-jdk-slim AS build
-
+RUN chmod +x gradlew
 # Устанавливаем рабочую директорию
 WORKDIR /googlesheetservice
 # Копируем исходный код
