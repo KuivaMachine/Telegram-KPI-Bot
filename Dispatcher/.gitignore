@@ -1,8 +1,10 @@
 HELP.md
 .gradle
 /build
-!gradle/wrapper/gradle-wrapper.jar
 !Dispatcher/build/libs
+
+!gradle/wrapper/gradle-wrapper.jar
+
 !**/src/test/**/build/
 *.txt
 ### IntelliJ IDEA ###
