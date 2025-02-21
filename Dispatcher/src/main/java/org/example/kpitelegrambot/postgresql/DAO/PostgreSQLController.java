@@ -28,11 +28,13 @@ public class PostgreSQLController {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    private void makeSqlRequestByStatement(String sql) {
+    private boolean makeSqlRequestByStatement(String sql) {
         try {
             jdbcTemplate.execute(sql);
+            return true;
         } catch (DataAccessException e) {
-            log.error(e.getMessage());
+            log.error("НЕ УДАЛОСЬ ВЫПОЛНИТЬ ЗАПРОС - {}", e.getMessage());
+            return false;
         }
     }
 
@@ -79,28 +81,32 @@ public class PostgreSQLController {
         String tableName = "statistics_by_packers";
         String getLastStatRequest = String.format("SELECT * FROM %s ORDER BY created_at DESC LIMIT 1;", tableName);
 
-        PackerStatistic statistic = jdbcTemplate.queryForObject(getLastStatRequest, new PackerStatisticMapper());
-
-        StringBuilder sb = new StringBuilder();
-
-        if (statistic != null) {
-            sb.append(DateService.parseSqlDateToString(statistic.getDate()))
-                    .append("\n")
-                    .append("WB основной: ").append(statistic.getWb_mhc())
-                    .append("\n")
-                    .append("ЕБ: ").append(statistic.getWb_signum())
-                    .append("\n")
-                    .append("СЛ: ").append(statistic.getWb_silicosha())
-                    .append("\n")
-                    .append("Озон: ").append(statistic.getOzon())
-                    .append("\n")
-                    .append("Яндекс: ").append(statistic.getYandex())
-                    .append("\n")
-                    .append("WB Print Kid: ").append(statistic.getWb_printkid())
-                    .append("\n")
-                    .append("ФБО: ").append(statistic.getFbo());
+        StringBuilder sb;
+        try {
+            PackerStatistic statistic = jdbcTemplate.queryForObject(getLastStatRequest, new PackerStatisticMapper());
+            sb = new StringBuilder();
+            if (statistic != null) {
+                sb.append(DateService.parseSqlDateToString(statistic.getDate()))
+                        .append("\n")
+                        .append("WB основной: ").append(statistic.getWb_mhc())
+                        .append("\n")
+                        .append("ЕБ: ").append(statistic.getWb_signum())
+                        .append("\n")
+                        .append("СЛ: ").append(statistic.getWb_silicosha())
+                        .append("\n")
+                        .append("Озон: ").append(statistic.getOzon())
+                        .append("\n")
+                        .append("Яндекс: ").append(statistic.getYandex())
+                        .append("\n")
+                        .append("WB Print Kid: ").append(statistic.getWb_printkid())
+                        .append("\n")
+                        .append("ФБО: ").append(statistic.getFbo());
+                return sb.toString();
+            }
+        } catch (DataAccessException e) {
+            log.info("ЗАПРОС {} ВЕРНУЛ ПУСТОЙ РЕЗУЛЬТАТ - {}", getLastStatRequest, e.getMessage());
         }
-        return sb.toString();
+        return null;
     }
 
     public String getLastAddedPrinterRecordToString(Employee currentEmployee) {
@@ -108,16 +114,20 @@ public class PostgreSQLController {
         String getLastStatRequest = String.format("SELECT date, prints_num, defects_num FROM %s ORDER BY created_at DESC LIMIT 1;", tableName);
         StringBuilder sb = new StringBuilder();
         sb.append(currentEmployee.getFio()).append("\n");
-        PrinterStatistic statistic = jdbcTemplate.queryForObject(getLastStatRequest, new PrinterStatisticMapper());
-        if (statistic != null) {
-            sb.append(DateService.parseSqlDateToString(statistic.getDate()))
-                    .append("\n")
-                    .append("Напечатано: ").append(statistic.getPrints_num())
-                    .append("\n")
-                    .append("Брак: ").append(statistic.getDefects_num());
+        try {
+            PrinterStatistic statistic = jdbcTemplate.queryForObject(getLastStatRequest, new PrinterStatisticMapper());
+            if (statistic != null) {
+                sb.append(DateService.parseSqlDateToString(statistic.getDate()))
+                        .append("\n")
+                        .append("Напечатано: ").append(statistic.getPrints_num())
+                        .append("\n")
+                        .append("Брак: ").append(statistic.getDefects_num());
+                return sb.toString();
+            }
+        } catch (DataAccessException e) {
+            log.info("ЗАПРОС {} ВЕРНУЛ ПУСТОЙ РЕЗУЛЬТАТ - {}", getLastStatRequest, e.getMessage());
         }
-
-        return sb.toString();
+        return null;
     }
 
     public void deletePrinterBuffer(Employee currentEmployee) {
@@ -253,6 +263,16 @@ public class PostgreSQLController {
             log.info("ТАБЛИЦЫ СБОРЩИКОВ НЕ СУЩЕСТВУЕТ");
             return null;
         }
+    }
+
+    public boolean deleteLastPackerRecord() {
+        String deleteRequest = "DELETE FROM statistics_by_packers WHERE date = (SELECT date FROM statistics_by_packers ORDER BY created_at DESC LIMIT 1);";
+        return makeSqlRequestByStatement(deleteRequest);
+    }
+    public boolean deleteLastPrinterRecord(Employee currentEmployee) {
+        String tableName = String.format("statistic_from_%s", currentEmployee.getChatId());
+        String deleteRequest = String.format("DELETE FROM %s WHERE date = (SELECT date FROM %s ORDER BY created_at DESC LIMIT 1);", tableName, tableName);
+        return makeSqlRequestByStatement(deleteRequest);
     }
 
 }

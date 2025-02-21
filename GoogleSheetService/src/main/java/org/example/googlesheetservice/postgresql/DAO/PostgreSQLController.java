@@ -33,7 +33,7 @@ public class PostgreSQLController {
         try {
             jdbcTemplate.execute(sql);
         } catch (DataAccessException e) {
-            log.error(e.getMessage());
+            log.error("НЕ УДАЛОСЬ ВЫПОЛНИТЬ ЗАПРОС - {}",e.getMessage());
         }
     }
 

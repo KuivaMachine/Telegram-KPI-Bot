@@ -28,6 +28,14 @@ public class PrinterHandler implements JobHandler {
         if (receivedMessage.equals("/start")) {
             return sayHelloProcess(sendMessage, currentEmployee);
         }
+        if (currentEmployee.getStatus().equals(EmployeeStatus.DELETING)) {
+            if (receivedMessage.equals(ButtonLabels.YES.getLabel())) {
+                return deleteLastRecord(currentEmployee, sendMessage);
+            }
+            if (receivedMessage.equals(ButtonLabels.NO.getLabel())) {
+                return cancelAddingStatistic(sendMessage, currentEmployee);
+            }
+        }
         if (receivedMessage.equals(ButtonLabels.CANCEL_ADDING.getLabel())) {
             return cancelAddingStatistic(sendMessage, currentEmployee);
         }
@@ -37,6 +45,9 @@ public class PrinterHandler implements JobHandler {
             }
             if (receivedMessage.equals(ButtonLabels.SHOW_STATISTIC.getLabel())) {
                 return showLastRecord(currentEmployee, sendMessage);
+            }
+            if (receivedMessage.equals(ButtonLabels.DELETE_LAST_RECORD.getLabel())) {
+                return deletingLastRecordProcess(currentEmployee, sendMessage);
             }
         }
         if (currentEmployee.getStatus().equals(EmployeeStatus.WAITING_DATE)) {
@@ -60,6 +71,32 @@ public class PrinterHandler implements JobHandler {
         return sendMessage;
     }
 
+    private SendMessage deleteLastRecord(Employee currentEmployee, SendMessage sendMessage) {
+        if (postgres.deleteLastPrinterRecord(currentEmployee)) {
+            sendMessage.setText(AnswersList.DELETE_COMPLETE.getText());
+        } else {
+            sendMessage.setText(AnswersList.DELETE_UNCOMPLETED.getText());
+        }
+        sendMessage.setReplyMarkup(ReplyKeyboardFactory.getShowAndAddKeyboard());
+        currentEmployee.setStatus(EmployeeStatus.SAVED);
+        employeeService.save(currentEmployee);
+        return sendMessage;
+    }
+
+    private SendMessage deletingLastRecordProcess(Employee currentEmployee, SendMessage sendMessage) {
+        String lastAddedPackerRecord = postgres.getLastAddedPrinterRecordToString(currentEmployee);
+        if(lastAddedPackerRecord!=null){
+            sendMessage.setText(String.format("Последняя добавленная запись:\n%s\n\nУверены, что хотите удалить?", lastAddedPackerRecord));
+            sendMessage.setReplyMarkup(ReplyKeyboardFactory.getYesNoMarkup());
+            currentEmployee.setStatus(EmployeeStatus.DELETING);
+        }else{
+            sendMessage.setText(AnswersList.EMPTY_RESULT.getText());
+            currentEmployee.setStatus(EmployeeStatus.SAVED);
+        }
+        employeeService.save(currentEmployee);
+        return sendMessage;
+    }
+
     public SendMessage sayHelloProcess(SendMessage sendMessage, Employee currentEmployee) {
         postgres.deletePrinterBuffer(currentEmployee);
         currentEmployee.setStatus(EmployeeStatus.SAVED);
@@ -80,7 +117,7 @@ public class PrinterHandler implements JobHandler {
         currentEmployee.setStatus(EmployeeStatus.SAVED);
         employeeService.save(currentEmployee);
         sendMessage.setText(AnswersList.CANCEL_MESSAGE.getText());
-        sendMessage.setReplyMarkup(ReplyKeyboardFactory.getAddStatKeyboard());
+        sendMessage.setReplyMarkup(ReplyKeyboardFactory.getShowAndAddKeyboard());
         return sendMessage;
     }
 
@@ -90,7 +127,12 @@ public class PrinterHandler implements JobHandler {
     }
 
     public SendMessage showLastRecord(Employee currentEmployee, SendMessage sendMessage) {
-        sendMessage.setText(postgres.getLastAddedPrinterRecordToString(currentEmployee));
+        String lastPrinterRecord = postgres.getLastAddedPrinterRecordToString(currentEmployee);
+        if(lastPrinterRecord!=null){
+            sendMessage.setText(lastPrinterRecord);
+        }else{
+            sendMessage.setText(AnswersList.EMPTY_RESULT.getText());
+        }
         return sendMessage;
     }
 

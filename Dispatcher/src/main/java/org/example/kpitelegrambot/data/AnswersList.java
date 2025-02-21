@@ -107,7 +107,11 @@ public enum AnswersList {
     PRINTER_INVALID_COMMAND("Это прекрасно, но я не знаю такой команды \uD83D\uDE01"),
     DATE_CHOICE("Выберите дату Вашей смены \uD83D\uDCC5"),
     DEFECTS_NUM_REQUEST("А сколько у Вас было брака?"),
-    PRINTS_NUM_REQUEST("Сколько всего Вы напечатали?)");
+    PRINTS_NUM_REQUEST("Сколько всего Вы напечатали?)"),
+    DELETE_COMPLETE("Запись удалена"),
+    DELETE_UNCOMPLETED("Произошла ошибка \uD83D\uDE14. Не получилось удалить("),
+    EMPTY_RESULT("У вас нет записей, пока что)");
 
     String text;
 }
+

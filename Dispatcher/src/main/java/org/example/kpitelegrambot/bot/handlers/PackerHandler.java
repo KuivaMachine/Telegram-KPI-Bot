@@ -1,6 +1,7 @@
 package org.example.kpitelegrambot.bot.handlers;
 
 import lombok.RequiredArgsConstructor;
+import org.checkerframework.checker.units.qual.A;
 import org.example.kpitelegrambot.bot.TelegramBot;
 import org.example.kpitelegrambot.bot.keyboards.ReplyKeyboardFactory;
 import org.example.kpitelegrambot.data.AnswersList;
@@ -33,6 +34,14 @@ public class PackerHandler implements JobHandler {
         if (receivedMessage.equals("/start")) {
             return sayHelloProcess(sendMessage, currentEmployee);
         }
+        if (currentEmployee.getStatus().equals(EmployeeStatus.DELETING)) {
+            if (receivedMessage.equals(ButtonLabels.YES.getLabel())) {
+                return deleteLastRecord(currentEmployee, sendMessage);
+            }
+            if (receivedMessage.equals(ButtonLabels.NO.getLabel())) {
+                return cancelAddingStatistic(sendMessage, currentEmployee);
+            }
+        }
         if (receivedMessage.equals(ButtonLabels.CANCEL_ADDING.getLabel())) {
             return cancelAddingStatistic(sendMessage, currentEmployee);
         }
@@ -42,6 +51,9 @@ public class PackerHandler implements JobHandler {
             }
             if (receivedMessage.equals(ButtonLabels.SHOW_STATISTIC.getLabel())) {
                 return showLastRecord(currentEmployee, sendMessage);
+            }
+            if (receivedMessage.equals(ButtonLabels.DELETE_LAST_RECORD.getLabel())) {
+                return deletingLastRecordProcess(currentEmployee, sendMessage);
             }
         }
         if (currentEmployee.getStatus().equals(EmployeeStatus.WAITING_WB_MHC)) {
@@ -99,6 +111,32 @@ public class PackerHandler implements JobHandler {
         return sendMessage;
 
 
+    }
+
+    private SendMessage deleteLastRecord(Employee currentEmployee, SendMessage sendMessage) {
+        if (postgres.deleteLastPackerRecord()) {
+            sendMessage.setText(AnswersList.DELETE_COMPLETE.getText());
+        } else {
+            sendMessage.setText(AnswersList.DELETE_UNCOMPLETED.getText());
+        }
+        sendMessage.setReplyMarkup(ReplyKeyboardFactory.getShowAndAddKeyboard());
+        currentEmployee.setStatus(EmployeeStatus.SAVED);
+        employeeService.save(currentEmployee);
+        return sendMessage;
+    }
+
+    private SendMessage deletingLastRecordProcess(Employee currentEmployee, SendMessage sendMessage) {
+        String lastAddedPackerRecord = postgres.getLastAddedPackerRecordToString();
+        if(lastAddedPackerRecord!=null){
+            sendMessage.setText(String.format("Последняя добавленная запись:\n%s\n\nУверены, что хотите удалить?", lastAddedPackerRecord));
+            sendMessage.setReplyMarkup(ReplyKeyboardFactory.getYesNoMarkup());
+            currentEmployee.setStatus(EmployeeStatus.DELETING);
+        }else{
+            sendMessage.setText(AnswersList.EMPTY_RESULT.getText());
+            currentEmployee.setStatus(EmployeeStatus.SAVED);
+        }
+        employeeService.save(currentEmployee);
+        return sendMessage;
     }
 
     public SendMessage sayHelloProcess(SendMessage sendMessage, Employee currentEmployee) {
@@ -198,17 +236,22 @@ public class PackerHandler implements JobHandler {
         currentEmployee.setStatus(EmployeeStatus.SAVED);
         employeeService.save(currentEmployee);
         sendMessage.setText(AnswersList.CANCEL_MESSAGE.getText());
-        sendMessage.setReplyMarkup(ReplyKeyboardFactory.getAddStatKeyboard());
+        sendMessage.setReplyMarkup(ReplyKeyboardFactory.getShowAndAddKeyboard());
         return sendMessage;
     }
 
     public SendMessage invalidNumberProcess(SendMessage sendMessage, String text) {
-        sendMessage.setText(String.format("Вы ввели %s \nКакое-то подозрительное число \uD83D\uDE11 \nПопробуйте еще разок?)", text));
+        sendMessage.setText(String.format("Вы ввели %s\nКакое-то подозрительное число \uD83D\uDE11 \nПопробуйте еще разок?)", text));
         return sendMessage;
     }
 
     public SendMessage showLastRecord(Employee currentEmployee, SendMessage sendMessage) {
-        sendMessage.setText(postgres.getLastAddedPackerRecordToString());
+        String lastAddedPackerRecord=postgres.getLastAddedPackerRecordToString();
+        if(lastAddedPackerRecord!=null){
+            sendMessage.setText(lastAddedPackerRecord);
+        }else{
+            sendMessage.setText(AnswersList.EMPTY_RESULT.getText());
+        }
         return sendMessage;
     }
 }

@@ -35,9 +35,18 @@ public class ReplyKeyboardFactory {
 
     public static ReplyKeyboardMarkup getShowAndAddKeyboard() {
         KeyboardRow row1 = new KeyboardRow();
-        row1.add(new KeyboardButton(ButtonLabels.SHOW_STATISTIC.getLabel()));
+        row1.add(new KeyboardButton(ButtonLabels.ADD_NEW_STATISTICS.getLabel()));
         KeyboardRow row2 = new KeyboardRow();
-        row2.add(new KeyboardButton(ButtonLabels.ADD_NEW_STATISTICS.getLabel()));
-        return createKeyboard(List.of(row1, row2));
+        row2.add(new KeyboardButton(ButtonLabels.SHOW_STATISTIC.getLabel()));
+        KeyboardRow row3 = new KeyboardRow();
+        row3.add(new KeyboardButton(ButtonLabels.DELETE_LAST_RECORD.getLabel()));
+        return createKeyboard(List.of(row1, row2, row3));
+    }
+
+    public static ReplyKeyboard getYesNoMarkup() {
+        KeyboardRow row1 = new KeyboardRow();
+        row1.add(new KeyboardButton(ButtonLabels.YES.getLabel()));
+        row1.add(new KeyboardButton(ButtonLabels.NO.getLabel()));
+        return createKeyboard(List.of(row1));
     }
 }

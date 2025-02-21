@@ -1,7 +1,6 @@
 package org.example.kpitelegrambot.bot.handlers;
 
 import lombok.RequiredArgsConstructor;
-
 import lombok.extern.log4j.Log4j2;
 import org.example.kpitelegrambot.bot.keyboards.InlineKeyboardFactory;
 import org.example.kpitelegrambot.bot.keyboards.ReplyKeyboardFactory;
@@ -27,7 +26,7 @@ public class CallbackQueryHandler implements Handler {
     private final EmployeeService employeeService;
     private final PostgreSQLController postgres;
     private final KafkaProducer kafkaProducer;
-    Employee currentEmployee;
+
     DateService dateService = new DateService();
 
     @Override
@@ -35,7 +34,7 @@ public class CallbackQueryHandler implements Handler {
         Long chatId = update.getCallbackQuery().getMessage().getChatId();
         String callback = update.getCallbackQuery().getData();
         SendMessage sendMessage = new SendMessage();
-        currentEmployee = employeeService.getEmployeeByChatId(chatId);
+        Employee currentEmployee = employeeService.getEmployeeByChatId(chatId);
 
         sendMessage.setChatId(chatId);
         sendMessage.setText("Эта команда сейчас неактивна) Если нужна помощь - попробуйте <b>/help</b>");
@@ -62,12 +61,10 @@ public class CallbackQueryHandler implements Handler {
                 return fillDateProcess(callback, currentEmployee, sendMessage);
             }
         }
-        if (currentEmployee.getStatus().equals(EmployeeStatus.SAVED)) {
-
-        }
 
         return sendMessage;
     }
+
 
     private SendMessage fillWorkTimeProcess(SendMessage sendMessage, Employee currentEmployee) {
 
