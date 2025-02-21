@@ -3,10 +3,10 @@ FROM openjdk:21-jdk-slim AS build
 
 # Устанавливаем рабочую директорию
 WORKDIR /dispatcher
-RUN chmod +x gradlew
+
 # Копируем исходный код
 COPY . .
-
+RUN chmod +x gradlew
 # Собираем проект
 RUN ./gradlew clean bootJar
 
