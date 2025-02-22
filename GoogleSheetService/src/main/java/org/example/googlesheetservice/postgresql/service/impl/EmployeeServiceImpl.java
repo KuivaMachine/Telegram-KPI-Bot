@@ -23,7 +23,6 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class EmployeeServiceImpl implements EmployeeService {
 
-    private static final Logger log = LoggerFactory.getLogger(EmployeeServiceImpl.class);
     EmployeeRepository employeeRepository;
 
     @Override

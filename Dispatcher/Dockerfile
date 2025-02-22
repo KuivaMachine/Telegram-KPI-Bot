@@ -1,14 +1,14 @@
-# Этап сборки
-#FROM openjdk:21-jdk-slim AS build
-#
-## Устанавливаем рабочую директорию
-#WORKDIR /dispatcher
-#
-## Копируем исходный код
-#COPY . .
-#
-## Собираем проект
-#RUN ./gradlew clean bootJar
+
+FROM openjdk:21-jdk-slim AS build
+
+# Устанавливаем рабочую директорию
+WORKDIR /dispatcher
+
+# Копируем исходный код
+COPY . .
+
+# Собираем проект
+RUN ./gradlew clean bootJar
 
 # Финальный этап
 FROM openjdk:21-jdk-slim
