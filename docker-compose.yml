@@ -32,8 +32,8 @@ services:
       DATASOURCE_PASSWORD: ${DATASOURCE_PASSWORD}
       DATASOURCE_DRIVER_NAME: ${DATASOURCE_DRIVER_NAME}
     volumes:
-      - ./.env:/app/.env  # Копируем .env в /app
-      - dispatcher_logs:/app/logs  # Именованный volume для логов
+      - ./.env:/dispatcher/.env  # Копируем .env в /app
+      - dispatcher_logs:/dispatcher/logs  # Именованный volume для логов
     networks:
       - my-network
 

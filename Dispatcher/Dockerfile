@@ -1,20 +1,20 @@
-#
-#FROM openjdk:21-jdk-slim AS build
-#
-## Устанавливаем рабочую директорию
-#WORKDIR /dispatcher
-#
-## Копируем исходный код
-#COPY . .
-#
-## Собираем проект
-#RUN ./gradlew clean bootJar
+
+FROM openjdk:21-jdk-slim AS build
+
+# Устанавливаем рабочую директорию
+WORKDIR /dispatcher
+
+# Копируем исходный код
+COPY . .
+
+# Собираем проект
+RUN ./gradlew clean bootJar
 
 # Финальный этап
 FROM openjdk:21-jdk-slim
 
 # Устанавливаем рабочую директорию
-WORKDIR /app
+WORKDIR /dispatcher
 
 # Копируем JAR-файл из этапа сборки
 COPY build/libs/Dispatcher-0.0.1-SNAPSHOT.jar dispatcher.jar
