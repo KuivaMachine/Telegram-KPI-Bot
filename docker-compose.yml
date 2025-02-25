@@ -7,8 +7,12 @@ services:
       dockerfile: Dockerfile
     container_name: Dispatcher
     restart: unless-stopped
-    ports:
-      - ${PORT_DISPATCHER}:${PORT_DISPATCHER}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.servertgbot.loadbalancer.server.port=${PORT_DISPATCHER}"
+      - "traefik.http.routers.servertgbot.rule=Host(`${HOST_URL}`) && PathPrefix(`/callback/update`)"
+      - "traefik.http.routers.servertgbot.entrypoints=websecure8"
+      - "traefik.http.routers.servertgbot.tls=true"
     depends_on:
       postgres:
         condition: service_healthy
@@ -113,6 +117,52 @@ services:
     networks:
       - my-network
 
+
+  traefik:
+    container_name: traefik
+    image: traefik:v2.9
+    ports:
+      - 80:80
+      - 8443:8443
+      - 9443:9443
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./tls.yml:/etc/traefik/tls.yml
+      - /home/kuiva/certs:/etc/traefik/certs
+    labels:
+      - "traefik.enable=true"
+
+      - "traefik.http.routers.traefik.rule=Host(`${HOST_URL}`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure9"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.services.traefik.loadbalancer.server.port=8088"
+
+      # Установка пароля для входа в админку
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_USER}:${TRAEFIK_PASSWORD}"
+      - "traefik.http.routers.traefik.middlewares=traefik-auth"
+
+      - "traefik.http.routers.http-catchall.rule=HostRegexp(`{host:.+}`)"
+      - "traefik.http.routers.http-catchall.entrypoints=web"
+      - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
+
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=false"
+    command:
+      - "--api.dashboard=true"
+      - "--ping=true"
+      - "--ping.entrypoint=ping"
+      - "--entryPoints.ping.address=:8888"
+      - "--entryPoints.web.address=:80"
+      - "--entrypoints.websecure8.address=:8443"
+      - "--entrypoints.websecure9.address=:9443"
+      - "--providers.docker=true"
+      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.file.filename=/etc/traefik/tls.yml"
+    restart: unless-stopped
+
 # Определение volumes
 volumes:
   kafka_data:
@@ -122,6 +172,8 @@ volumes:
   dispatcher_logs:
     driver: local
   googlesheetservice_logs:
+    driver: local
+  traefik-certs:
     driver: local
 
 # Сеть

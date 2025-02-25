@@ -110,7 +110,8 @@ public enum AnswersList {
     PRINTS_NUM_REQUEST("Сколько всего Вы напечатали?)"),
     DELETE_COMPLETE("Запись удалена"),
     DELETE_UNCOMPLETED("Произошла ошибка \uD83D\uDE14. Не получилось удалить("),
-    EMPTY_RESULT("У вас нет записей, пока что)");
+    EMPTY_RESULT("У вас нет записей, пока что)"),
+    CHANGE_MESSAGE("Слишком поздно что то менять \uD83D\uDE36\u200D\uD83C\uDF2B\uFE0F");
 
     String text;
 }
