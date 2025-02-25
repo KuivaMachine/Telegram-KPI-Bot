@@ -115,6 +115,7 @@ public class PackerHandler implements JobHandler {
     private SendMessage deleteLastRecord(Employee currentEmployee, SendMessage sendMessage) {
         if (postgres.deleteLastPackerRecord()) {
             sendMessage.setText(AnswersList.DELETE_COMPLETE.getText());
+            kafkaProducer.send("commands", "UPDATE");
         } else {
             sendMessage.setText(AnswersList.DELETE_UNCOMPLETED.getText());
         }

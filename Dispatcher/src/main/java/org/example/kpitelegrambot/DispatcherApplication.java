@@ -19,9 +19,6 @@ public class DispatcherApplication {
         Dotenv dotenv = Dotenv.configure().load();
         dotenv.entries().forEach(entry -> System.setProperty(entry.getKey(), entry.getValue()));
         SpringApplication.run(DispatcherApplication.class, args);
-
-
-
     }
 
 }

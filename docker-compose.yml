@@ -33,7 +33,6 @@ services:
       DATASOURCE_DRIVER_NAME: ${DATASOURCE_DRIVER_NAME}
     volumes:
       - ./.env:/dispatcher/.env  # Копируем .env в /app
-      - dispatcher_logs:/dispatcher/logs  # Именованный volume для логов
     networks:
       - my-network
 
@@ -162,7 +161,8 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--providers.file.filename=/etc/traefik/tls.yml"
     restart: unless-stopped
-
+    networks:
+      - my-network
 # Определение volumes
 volumes:
   kafka_data:

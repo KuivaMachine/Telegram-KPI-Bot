@@ -104,7 +104,7 @@ public enum AnswersList {
                 нажмите «Добавить новую статистику»
                 """),
     WB_MHC_REQUEST("Сколько Вы собрали на основном ВБ?"),
-    PRINTER_INVALID_COMMAND("Это прекрасно, но я не знаю такой команды \uD83D\uDE01"),
+    PRINTER_INVALID_COMMAND("Это прекрасно, но я не знаю такой команды \uD83D\uDE42"),
     DATE_CHOICE("Выберите дату Вашей смены \uD83D\uDCC5"),
     DEFECTS_NUM_REQUEST("А сколько у Вас было брака?"),
     PRINTS_NUM_REQUEST("Сколько всего Вы напечатали?)"),

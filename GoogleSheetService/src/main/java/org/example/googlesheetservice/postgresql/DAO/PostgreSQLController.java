@@ -123,7 +123,7 @@ public class PostgreSQLController {
 
     public void deletePrinterBuffer(Employee currentEmployee) {
         String bufferTableName = String.format("statistic_buffer_from_printer_%s", currentEmployee.getChatId());
-        String sqlDropRequest = String.format("DROP TABLE %s;", bufferTableName);
+        String sqlDropRequest = String.format("DROP TABLE IF EXISTS %s;", bufferTableName);
         makeSqlRequestByStatement(sqlDropRequest);
     }
 
@@ -186,7 +186,7 @@ public class PostgreSQLController {
 
     public void deletePackerBuffer(Employee currentEmployee) {
         String bufferTableName = String.format("statistic_buffer_from_packer_%s", currentEmployee.getChatId());
-        String sqlDropRequest = String.format("DROP TABLE %s;", bufferTableName);
+        String sqlDropRequest = String.format("DROP TABLE IF EXISTS %s;", bufferTableName);
         makeSqlRequestByStatement(sqlDropRequest);
     }
 
