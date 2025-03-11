@@ -19,7 +19,8 @@ public enum ButtonLabels {
     CANCEL_ADDING("Отменить добавление", "cancel_adding"),
     DELETE_LAST_RECORD("Удалить последнюю запись","delete_last_record" ),
     YES("Удалить", "yes"),
-    NO("Оставить", "no");
+    NO("Оставить", "no"),
+    ANOTHER_DATE("Другая", "another_date"),;
 
     String label;
     String callback;

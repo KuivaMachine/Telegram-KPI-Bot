@@ -6,13 +6,12 @@ import org.example.kpitelegrambot.bot.configuration.TelegramBotConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.ComponentScan;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @Log4j2
 @SpringBootApplication
+@EnableScheduling
 @EnableConfigurationProperties({TelegramBotConfig.class})
-
-
 public class DispatcherApplication {
 
     public static void main(String[] args) {

@@ -1,6 +1,7 @@
 package org.example.kpitelegrambot.bot;
 
 
+import org.example.kpitelegrambot.ScheduleManager;
 import org.example.kpitelegrambot.bot.configuration.TelegramBotConfig;
 import org.example.kpitelegrambot.bot.handlers.UpdateHandler;
 import org.springframework.stereotype.Component;
@@ -18,13 +19,14 @@ public class TelegramBot extends TelegramWebhookBot {
 
     TelegramBotConfig telegramBotConfig;
     TelegramRestController telegramRestController;
-
-    public TelegramBot(TelegramRestController telegramRestController, UpdateHandler updateHandler, TelegramBotConfig telegramBotConfig) {
+    ScheduleManager taskManager;
+    public TelegramBot(ScheduleManager taskManager, TelegramRestController telegramRestController, UpdateHandler updateHandler, TelegramBotConfig telegramBotConfig) {
         super(telegramBotConfig.getToken());
         this.telegramBotConfig = telegramBotConfig;
         this.telegramRestController = telegramRestController;
+        this.taskManager = taskManager;
         updateHandler.register(this);
-
+        taskManager.init(this);
         try {
             SetWebhook setWebhook = SetWebhook.builder().url(telegramBotConfig.getUrl()).build();
             this.setWebhook(setWebhook);

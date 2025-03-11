@@ -29,12 +29,6 @@ public class TelegramRestController {
         if (update.hasMessage() && update.getMessage().hasText()) {
            return updateHandler.process(update);
         }
-        if (update.hasEditedMessage()){
-            SendMessage sendMessage = new SendMessage();
-            sendMessage.setChatId(update.getMessage().getChatId());
-            sendMessage.setText(AnswersList.CHANGE_MESSAGE.getText());
-            return sendMessage;
-        }
         return null;
     }
 }

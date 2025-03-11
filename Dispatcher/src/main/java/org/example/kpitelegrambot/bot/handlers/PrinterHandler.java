@@ -10,6 +10,7 @@ import org.example.kpitelegrambot.googlesheets.KafkaProducer;
 import org.example.kpitelegrambot.postgresql.DAO.PostgreSQLController;
 import org.example.kpitelegrambot.postgresql.data.EmployeeStatus;
 import org.example.kpitelegrambot.postgresql.entity.Employee;
+import org.example.kpitelegrambot.postgresql.service.DateService;
 import org.example.kpitelegrambot.postgresql.service.EmployeeService;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -18,10 +19,11 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 @Component
 @RequiredArgsConstructor
 public class PrinterHandler implements JobHandler {
-
+    DateService dateService = new DateService();
     private final EmployeeService employeeService;
     private final PostgreSQLController postgres;
     private final KafkaProducer kafkaProducer;
+    private final CallbackQueryHandler callbackQueryHandler;
     @Override
     public SendMessage process(TelegramBot telegramBot, Update update, Employee currentEmployee, SendMessage sendMessage) {
         sendMessage.setText(AnswersList.PRINTER_INVALID_COMMAND.getText());
@@ -54,8 +56,18 @@ public class PrinterHandler implements JobHandler {
         if (currentEmployee.getStatus().equals(EmployeeStatus.WAITING_DATE)) {
             return invalidDateProcess(sendMessage);
         }
+        if(currentEmployee.getStatus().equals(EmployeeStatus.WAITING_ANOTHER_DATE)){
+            System.out.println("received another date"+receivedMessage);
+            String date = receivedMessage.strip().replace(".","-");
+            System.out.println("saved date"+date);
+            if (date.matches("\\d{2}.-?\\d{2}.-?\\d{4}")&&dateService.isValidDate(date)) {
+                return callbackQueryHandler.fillDateProcess(date, currentEmployee, sendMessage);
+            }else{
+                return invalidAnotherDateProcess(sendMessage, receivedMessage);
+            }
+        }
         if (currentEmployee.getStatus().equals(EmployeeStatus.WAITING_PRINTS_NUM)) {
-            if (receivedMessage.matches("\\d{1,3}")) {
+            if (receivedMessage.matches("\\d{1,4}")) {
                 return fillPrintsNumProcess(sendMessage, currentEmployee, receivedMessage);
             } else {
                 return invalidNumberProcess(sendMessage, receivedMessage);
@@ -69,6 +81,11 @@ public class PrinterHandler implements JobHandler {
             }
         }
 
+        return sendMessage;
+    }
+
+    private SendMessage invalidAnotherDateProcess(SendMessage sendMessage, String receivedMessage) {
+        sendMessage.setText(String.format("Вы ввели %s \nПопробуйте еще раз, нужна дата в формате \"дд.мм.гггг\"", receivedMessage));
         return sendMessage;
     }
 

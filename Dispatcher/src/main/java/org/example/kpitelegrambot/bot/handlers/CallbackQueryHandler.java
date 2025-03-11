@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.example.kpitelegrambot.bot.keyboards.InlineKeyboardFactory;
 import org.example.kpitelegrambot.bot.keyboards.ReplyKeyboardFactory;
+import org.example.kpitelegrambot.data.AnswersList;
 import org.example.kpitelegrambot.data.ButtonLabels;
 import org.example.kpitelegrambot.googlesheets.KafkaProducer;
 import org.example.kpitelegrambot.postgresql.DAO.PostgreSQLController;
@@ -60,8 +61,18 @@ public class CallbackQueryHandler implements Handler {
             if (callback.matches("^\\d{2}-\\d{2}-\\d{4}$")) {
                 return fillDateProcess(callback, currentEmployee, sendMessage);
             }
+            if(callback.equals(ButtonLabels.ANOTHER_DATE.getCallback())){
+                return anotherDateProcess(currentEmployee, sendMessage);
+            }
         }
 
+        return sendMessage;
+    }
+
+    private SendMessage anotherDateProcess(Employee currentEmployee, SendMessage sendMessage) {
+        currentEmployee.setStatus(EmployeeStatus.WAITING_ANOTHER_DATE);
+        employeeService.save(currentEmployee);
+        sendMessage.setText(AnswersList.ENTER_ANOTHER_DATE.getText());
         return sendMessage;
     }
 
@@ -77,7 +88,7 @@ public class CallbackQueryHandler implements Handler {
         return sendMessage;
     }
 
-    private SendMessage fillDateProcess(String callback, Employee currentEmployee, SendMessage sendMessage) {
+    SendMessage fillDateProcess(String callback, Employee currentEmployee, SendMessage sendMessage) {
         String nicePhrase;
         postgres.addValueInBufferFromPrinter(currentEmployee, dateService.parseStringToSqlDate(callback), "date");
         nicePhrase = postgres.getNicePhraseToPrinter(currentEmployee);

@@ -41,6 +41,8 @@ public class InlineKeyboardFactory {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row1 = new ArrayList<>();
+
+
         InlineKeyboardButton dayBefYesBut = new InlineKeyboardButton();
         dayBefYesBut.setText(dateService.getCurrentDate());
         dayBefYesBut.setCallbackData(dateService.getCurrentDate());
@@ -55,6 +57,11 @@ public class InlineKeyboardFactory {
         todayBut.setText(dateService.getDBYDate());
         todayBut.setCallbackData(dateService.getDBYDate());
         row1.add(todayBut);
+
+        InlineKeyboardButton anotherDateBut = new InlineKeyboardButton();
+        anotherDateBut.setText(ButtonLabels.ANOTHER_DATE.getLabel());
+        anotherDateBut.setCallbackData(ButtonLabels.ANOTHER_DATE.getCallback());
+        row1.add(anotherDateBut);
 
         rows.add(row1);
 

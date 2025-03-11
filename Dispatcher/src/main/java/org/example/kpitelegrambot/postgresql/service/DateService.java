@@ -5,12 +5,23 @@ import org.springframework.stereotype.Service;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 @Service
 public class DateService {
     LocalDate localDate = LocalDate.now();
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
+    public boolean isValidDate(String dateStr) {
+        try {
+            LocalDate date = LocalDate.parse(dateStr, formatter);
+            System.out.println("ДАТА ОГОНЬ!!!! : " + date);
+            return true;
+        } catch (DateTimeParseException e) {
+            System.out.println("ДАТА ГОВНО!!!!");
+            return false;
+        }
+    }
     public String getCurrentDate() {
         return localDate.format(formatter);
     }
