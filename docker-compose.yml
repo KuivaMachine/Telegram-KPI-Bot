@@ -33,7 +33,7 @@ services:
       DATASOURCE_DRIVER_NAME: ${DATASOURCE_DRIVER_NAME}
     volumes:
       - ./.env:/dispatcher/.env  # Копируем .env в /app
-      - /home/kuiva/Telegram-KPI-Bot/logs:dispatcher/logs
+      - /home/kuiva/Telegram-KPI-Bot/logs:/dispatcher/logs
     networks:
       - my-network
 
