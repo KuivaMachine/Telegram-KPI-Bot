@@ -14,7 +14,7 @@
 FROM openjdk:21-jdk-slim
 
 # Устанавливаем рабочую директорию
-WORKDIR /dispatcher
+WORKDIR /app
 
 # Копируем JAR-файл из этапа сборки
 COPY build/libs/Dispatcher-0.0.1-SNAPSHOT.jar dispatcher.jar
