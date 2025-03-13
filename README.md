@@ -1,25 +1,27 @@
-<deTelegram-KPI-Bot 🤖
 
-📊 Telegram-KPI-Bot — это телеграм-бот для сбора статистики работников компании "MustHaveCase". Он помогает собирать данные от печатников 🖨️ и упаковщиков 📦, сохраняет их в базу данных PostgreSQL 🐘, а затем автоматически заполняет таблицу Google Sheets 📈.
-🚀 Основные функции
-- Добавление статистики ➕: Работники могут отправлять свои данные через бота.
-- Показ последней записи 👀: Бот может показать последнюю внесенную запись.
-- Удаление записи 🗑️: Возможность удалить ошибочно внесенную запись.
-- Сохранение в БД 💾: Все данные сохраняются в PostgreSQL.
-- Генерация таблицы Google Sheets 📊: Данные автоматически переносятся в таблицу Google Sheets.
+<div align="center">
+    <h1>Telegram-KPI-Bot 🤖</h1>
+</div>
 
-🛠️ Технологии и инструменты
+📊 Telegram-KPI-Bot — это телеграм-бот для сбора статистики работников компании "MustHaveCase". Он помогает собирать данные от печатников 🖨️ и упаковщиков 📦, сохраняет их в базу данных PostgreSQL, а затем автоматически заполняет таблицу Google Sheets 📈.
+🚀 Основные функции:
+- Добавление статистики: работники могут отправлять свои данные через бота.
+- Показ последней записи: бот может показать последнюю внесенную запись.
+- Удаление записи: возможность удалить ошибочно внесенную запись.
+- Сохранение в БД: все данные сохраняются в PostgreSQL.
+- Генерация таблицы Google Sheets: данные автоматически переносятся в таблицу Google Sheets.
+
+🛠️ Технологии и инструменты:
 Языки и фреймворки
 - Java ☕
 - Spring 🌱 (Spring Boot, Spring Kafka, Spring Data JPA)
 
 Базы данных
-
 - PostgreSQL 🐘
 
 Брокер сообщений
 - Kafka 🚀
-- 
+
 Интеграции
 - Google Sheets API 📈
 - Telegram Bot API 🤖
@@ -30,14 +32,11 @@
 - Микросервисная архитектура 🧩
 
 🧩 Модули приложения
-- 1. Dispatcher 📨
-
+ 1. Dispatcher 📨
     Отвечает за взаимодействие с Telegram Bot API.
-
     Принимает данные от пользователей и отправляет их в Kafka.
 
-- 2. GoogleSheetService 📊
-
+2. GoogleSheetService 📊
     Получает данные из Kafka.
     Сохраняет данные в PostgreSQL.
     Обновляет таблицу Google Sheets на основе полученных данных.
@@ -46,51 +45,33 @@
 
 Каждый модуль приложения имеет свой Dockerfile, что позволяет легко развернуть приложение на сервере.
 
-    Соберите Docker-образы для каждого модуля:
-    bash
-    Copy
+Соберите Docker-образы для каждого модуля и запустите их:
 
-    docker build -t dispatcher -f Dispatcher/Dockerfile .
-    docker build -t google-sheet-service -f GoogleSheetService/Dockerfile .
+    docker compose up -d traefik dispatcher googlesheetservice --build
 
-    Запустите контейнеры:
-    bash
-    Copy
-
-    docker run -d --name dispatcher dispatcher
-    docker run -d --name google-sheet-service google-sheet-service
-
-    Убедитесь, что Kafka и PostgreSQL также запущены и настроены.
+Убедитесь, что Kafka и PostgreSQL также запущены и настроены.
 
 🚀 Как начать
 
-    Клонируйте репозиторий:
-    bash
-    Copy
-
+Клонируйте репозиторий:
+   
     git clone https://github.com/ваш-username/Telegram-KPI-Bot.git
 
-    Настройте переменные окружения:
+Настройте переменные окружения:
 
         TELEGRAM_BOT_TOKEN: Токен вашего Telegram-бота.
-
         GOOGLE_SHEETS_CREDENTIALS: JSON-файл с учетными данными для Google Sheets API.
-
         DATABASE_URL, DATABASE_USERNAME, DATABASE_PASSWORD: Данные для подключения к PostgreSQL.
-
         KAFKA_BROKER: Адрес брокера Kafka.
 
-    Запустите приложение:
+Запустите приложение:
 
-        Соберите и запустите Docker-контейнеры (см. раздел Развертывание с Docker).
+Соберите и запустите Docker-контейнеры (см. раздел Развертывание с Docker).
 
-📄 Лицензия
-
-Этот проект распространяется под лицензией MIT. Подробности см. в файле LICENSE.
 📬 Контакты
 
 Если у вас есть вопросы или предложения, свяжитесь со мной:
 
-    Telegram: @ваш-username
+Telegram: @olezha_zaostrovtsev
 
-    Email: ваш-email@example.com
+Email: olegzaostrovtsev19@yandex.ru
