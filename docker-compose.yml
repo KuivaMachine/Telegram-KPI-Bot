@@ -1,6 +1,35 @@
 
 services:
   # Сервис Dispatcher
+#  tech_sup_bot:
+#    build:
+#      context: /home/kuiva/TechSupBot  # Путь к Dockerfile второго бота
+#      dockerfile: Dockerfile
+#    container_name: tech_sup_bot
+#    restart: unless-stopped
+#    labels:
+#      - "traefik.enable=true"
+#      - "traefik.http.services.tech_sup_bot.loadbalancer.server.port=${PORT_TECH_SUPP}"
+#      - "traefik.http.routers.tech_sup_bot.rule=Host(`${HOST_URL}`) && PathPrefix(`/callback/bot_tech_sup/update`)"
+#      - "traefik.http.routers.tech_sup_bot.entrypoints=websecure8"
+#      - "traefik.http.routers.tech_sup_bot.tls=true"
+#
+#    environment:
+#      BOT_NAME: ${SECOND_BOT_NAME}
+#      BOT_TOKEN: ${SECOND_BOT_TOKEN}
+#      BOT_URL: ${SECOND_BOT_URL}
+#      PORT_TECH_SUPP: ${PORT_SECOND_BOT:-8090}
+#      DATASOURCE_URL: ${DATASOURCE_URL}
+#      DATASOURCE_USERNAME: ${DATASOURCE_USERNAME}
+#      DATASOURCE_PASSWORD: ${DATASOURCE_PASSWORD}
+#      DATASOURCE_DRIVER_NAME: ${DATASOURCE_DRIVER_NAME}
+#    volumes:
+#      - ./.env:/TechSupBot/.env  # Копируем .env в /second-bot
+#      - /home/kuiva/TechSupBot/logs:/tech_sup_bot/logs
+#    networks:
+#      - my-network
+
+
   dispatcher:
     build:
       context: ./Dispatcher
@@ -10,7 +39,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.dispatcher.loadbalancer.server.port=${PORT_DISPATCHER}"
-      - "traefik.http.routers.dispatcher.rule=Host(`${HOST_URL}`) && PathPrefix(`/callback/update`)"
+      - "traefik.http.routers.dispatcher.rule=Host(`${HOST_URL}`) && PathPrefix(`/callback/bot_kpi/update`)"
       - "traefik.http.routers.dispatcher.entrypoints=websecure8"
       - "traefik.http.routers.dispatcher.tls=true"
     depends_on:

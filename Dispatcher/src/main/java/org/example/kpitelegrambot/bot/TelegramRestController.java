@@ -21,7 +21,7 @@ public class TelegramRestController {
     CallbackQueryHandler callbackQueryHandler;
     UpdateHandler updateHandler;
 
-    @PostMapping ("/callback/update")
+    @PostMapping ("/callback/bot_kpi/update")
     public BotApiMethod<?> receiveUpdate(@RequestBody Update update) {
         if (update.hasCallbackQuery()) {
            return callbackQueryHandler.process(update);
