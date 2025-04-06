@@ -24,7 +24,7 @@ services:
       TECH_DATASOURCE_PASSWORD: ${TECH_DATASOURCE_PASSWORD}
       TECH_DATASOURCE_DRIVER_NAME: ${TECH_DATASOURCE_DRIVER_NAME}
     volumes:
-      - ./.env:/TechSupBot/.env  # Копируем .env в /second-bot
+      - ./.env:/dispatcher/.env  # Копируем .env в /second-bot
       - /home/kuiva/TechSupBot/logs:/tech_sup_bot/logs
     networks:
       - my-network
