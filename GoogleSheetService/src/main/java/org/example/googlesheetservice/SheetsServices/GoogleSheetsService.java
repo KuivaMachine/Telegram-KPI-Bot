@@ -726,14 +726,6 @@ public class GoogleSheetsService {
                                 new ValueRange()
                                         .setRange(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), values.indexOf(value) + 1))
                                         .setValues(List.of(List.of(String.format("%s/%s", statistic.getPrints_num(), statistic.getDefects_num())))));
-//                    String range = String.format("%s%d:%s%d", getColumnLetter(statistic.getDate()),
-//                            8 + marketsNumber, getColumnLetter(statistic.getDate()),
-//                            7 + marketsNumber + numberOfDayPrinters);
-//
-//                    data.add(
-//                            new ValueRange()
-//                                    .setRange(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), 8 + marketsNumber + numberOfDayPrinters))
-//                                    .setValues(List.of(List.of(String.format("=СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"^(\\d+)\"));0)))&\"/\"&ОКРУГЛ(СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s;\"\\/(\\d+)\"));0))))", range, range)))));
                         BatchUpdateValuesRequest batchRequest = new BatchUpdateValuesRequest()
                                 .setValueInputOption("USER_ENTERED")
                                 .setData(data);

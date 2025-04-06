@@ -15,14 +15,14 @@ services:
       - "traefik.http.routers.tech_sup_bot.tls=true"
 
     environment:
-      BOT_NAME: ${BOT_NAME}
-      BOT_TOKEN: ${BOT_TOKEN}
-      BOT_URL: ${BOT_URL}
-      PORT_TECH_SUPP: ${PORT_TECH_SUPP:-8090}
-      DATASOURCE_URL: ${DATASOURCE_URL}
-      DATASOURCE_USERNAME: ${DATASOURCE_USERNAME}
-      DATASOURCE_PASSWORD: ${DATASOURCE_PASSWORD}
-      DATASOURCE_DRIVER_NAME: ${DATASOURCE_DRIVER_NAME}
+      TECH_BOT_NAME: ${TECH_BOT_NAME}
+      TECH_BOT_TOKEN: ${TECH_BOT_TOKEN}
+      TECH_BOT_URL: ${TECH_BOT_URL}
+      TECH_PORT_TECH_SUPP: ${PORT_TECH_SUPP:-8090}
+      TECH_DATASOURCE_URL: ${TECH_DATASOURCE_URL}
+      TECH_DATASOURCE_USERNAME: ${TECH_DATASOURCE_USERNAME}
+      TECH_DATASOURCE_PASSWORD: ${TECH_DATASOURCE_PASSWORD}
+      TECH_DATASOURCE_DRIVER_NAME: ${TECH_DATASOURCE_DRIVER_NAME}
     volumes:
       - ./.env:/TechSupBot/.env  # Копируем .env в /second-bot
       - /home/kuiva/TechSupBot/logs:/tech_sup_bot/logs
