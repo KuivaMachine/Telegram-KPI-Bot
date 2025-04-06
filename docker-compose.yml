@@ -15,7 +15,6 @@ services:
       - "traefik.http.routers.tech_sup_bot.tls=true"
 
     environment:
-      TECH_BOT_NAME: ${TECH_BOT_NAME}
       TECH_BOT_TOKEN: ${TECH_BOT_TOKEN}
       TECH_BOT_URL: ${TECH_BOT_URL}
       TECH_PORT_TECH_SUPP: ${PORT_TECH_SUPP:-8090}
