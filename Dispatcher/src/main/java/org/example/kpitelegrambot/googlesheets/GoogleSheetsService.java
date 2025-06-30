@@ -1,18 +1,17 @@
-package org.example.googlesheetservice.SheetsServices;
+package org.example.kpitelegrambot.googlesheets;
 
 
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.*;
 import lombok.extern.log4j.Log4j2;
-import org.example.googlesheetservice.Data.RowColumn;
-import org.example.googlesheetservice.postgresql.DAO.PostgreSQLController;
-import org.example.googlesheetservice.postgresql.data.Months;
-import org.example.googlesheetservice.postgresql.entity.Employee;
-import org.example.googlesheetservice.postgresql.entity.PackerStatistic;
-import org.example.googlesheetservice.postgresql.entity.PrinterStatistic;
-import org.example.googlesheetservice.postgresql.entity.SheetId;
-import org.example.googlesheetservice.postgresql.service.EmployeeService;
-import org.example.googlesheetservice.postgresql.service.SheetIdService;
+import org.example.kpitelegrambot.postgresql.DAO.PostgreSQLController;
+import org.example.kpitelegrambot.postgresql.data.Months;
+import org.example.kpitelegrambot.postgresql.entity.Employee;
+import org.example.kpitelegrambot.postgresql.entity.PackerStatistic;
+import org.example.kpitelegrambot.postgresql.entity.PrinterStatistic;
+import org.example.kpitelegrambot.postgresql.entity.SheetId;
+import org.example.kpitelegrambot.postgresql.service.EmployeeService;
+import org.example.kpitelegrambot.postgresql.service.SheetIdService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -165,10 +164,10 @@ public class GoogleSheetsService {
                 .setMergeType("MERGE_ALL")));
 
         // Установка ширины строк и столбцов
-        requests.add(createDimensionUpdateRequest(SHEET_ID, RowColumn.ROWS, 40, 1, 2));
-        requests.add(createDimensionUpdateRequest(SHEET_ID, RowColumn.COLUMNS, 340, 1, 2));
-        requests.add(createDimensionUpdateRequest(SHEET_ID, RowColumn.COLUMNS, 90, 2, 4));
-        requests.add(createDimensionUpdateRequest(SHEET_ID, RowColumn.COLUMNS, 70, 4, numberOfDaysOfMonth + 4));
+        requests.add(createDimensionUpdateRequest(SHEET_ID, "ROWS", 40, 1, 2));
+        requests.add(createDimensionUpdateRequest(SHEET_ID, "COLUMNS", 340, 1, 2));
+        requests.add(createDimensionUpdateRequest(SHEET_ID, "COLUMNS", 90, 2, 4));
+        requests.add(createDimensionUpdateRequest(SHEET_ID, "COLUMNS", 70, 4, numberOfDaysOfMonth + 4));
 
         // Форматирование всей таблицы
         requests.add(createCellStyleRequest(new GridRange()
@@ -564,12 +563,12 @@ public class GoogleSheetsService {
         }
     }
 
-    private Request createDimensionUpdateRequest(int sheetId, RowColumn object, int width, int start, int end) {
+    private Request createDimensionUpdateRequest(int sheetId, String inputType, int width, int start, int end) {
         DimensionProperties properties = new DimensionProperties().setPixelSize(width);
         UpdateDimensionPropertiesRequest updateRowProperties = new UpdateDimensionPropertiesRequest()
                 .setRange(new DimensionRange()
                         .setSheetId(sheetId)
-                        .setDimension(object.getDescription())
+                        .setDimension(inputType)
                         .setStartIndex(start)
                         .setEndIndex(end))
                 .setProperties(properties)

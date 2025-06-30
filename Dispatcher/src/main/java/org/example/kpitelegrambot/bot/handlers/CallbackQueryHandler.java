@@ -6,7 +6,7 @@ import org.example.kpitelegrambot.bot.keyboards.InlineKeyboardFactory;
 import org.example.kpitelegrambot.bot.keyboards.ReplyKeyboardFactory;
 import org.example.kpitelegrambot.data.AnswersList;
 import org.example.kpitelegrambot.data.ButtonLabels;
-import org.example.kpitelegrambot.googlesheets.KafkaProducer;
+import org.example.kpitelegrambot.googlesheets.StatisticHandler;
 import org.example.kpitelegrambot.postgresql.DAO.PostgreSQLController;
 import org.example.kpitelegrambot.postgresql.data.DayNight;
 import org.example.kpitelegrambot.postgresql.data.EmployeePost;
@@ -26,7 +26,7 @@ public class CallbackQueryHandler implements Handler {
 
     private final EmployeeService employeeService;
     private final PostgreSQLController postgres;
-    private final KafkaProducer kafkaProducer;
+    private final StatisticHandler statisticHandler;
 
     DateService dateService = new DateService();
 
@@ -97,7 +97,7 @@ public class CallbackQueryHandler implements Handler {
             currentEmployee.setStatus(EmployeeStatus.SAVED);
             employeeService.save(currentEmployee);
             sendMessage.setText(String.format("Я все записал!\n%s", nicePhrase));
-            kafkaProducer.send("printer_stat_topic", addedStat);
+            statisticHandler.processPrinterStatistic(addedStat);
         }else{
             sendMessage.setText("У меня не очень получилось записать :(\nМожет, попробовать еще раз?");
         }
@@ -110,7 +110,7 @@ public class CallbackQueryHandler implements Handler {
         currentEmployee.setJob(EmployeePost.PRINTER);
         currentEmployee.setStatus(EmployeeStatus.SAVED);
         employeeService.save(currentEmployee);
-        kafkaProducer.send("commands", "UPDATE");
+        statisticHandler.processUpdateTable();
         sendMessage.setText("""
                 Отлично 👍 Чтобы записать статистику,\s
                 нажмите «Добавить статистику»
@@ -123,19 +123,12 @@ public class CallbackQueryHandler implements Handler {
         currentEmployee.setJob(EmployeePost.PACKER);
         currentEmployee.setStatus(EmployeeStatus.SAVED);
         employeeService.save(currentEmployee);
-        if (kafkaProducer.send("commands", "UPDATE")){
-            sendMessage.setText("""
+        statisticHandler.processUpdateTable();
+        sendMessage.setText("""
                 Отлично 👍 Чтобы записать статистику,\s
                 нажмите «Добавить новую статистику»
                 """);
-            sendMessage.setReplyMarkup(ReplyKeyboardFactory.getAddStatKeyboard());
-        }else{
-            sendMessage.setText("""
-                Отлично 👍 Чтобы записать статистику,\s
-                нажмите «Добавить новую статистику»
-                На сервере небольшая проблемка, скиньте скриншот сообщения ему - @olezha_zaostrovtsev
-                """);
-        }
+        sendMessage.setReplyMarkup(ReplyKeyboardFactory.getAddStatKeyboard());
         return sendMessage;
     }
 

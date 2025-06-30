@@ -26,6 +26,7 @@ public class PostgreSQLController {
     @Autowired
     public PostgreSQLController(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+
 makeSqlRequestByStatement("CREATE TABLE IF NOT EXISTS nice_words (id SERIAL PRIMARY KEY NOT NULL, phrase CHARACTER (255));");
 makeSqlRequestByStatement("INSERT INTO nice_words (phrase) VALUES ('Эта статистика – просто снос башки! \uD83E\uDD2F'); " +
         "INSERT INTO nice_words (phrase) VALUES ('Вы – звезда офиса! \uD83D\uDE0E'); " +
@@ -87,6 +88,7 @@ makeSqlRequestByStatement("INSERT INTO nice_words (phrase) VALUES ('Эта ст�
         "INSERT INTO nice_words (phrase) VALUES ('Я потрясен! Отличная работа! \uD83E\uDD29'); " +
         "INSERT INTO nice_words (phrase) VALUES ('Ваш босс гордится Вами! Только \uD83E\uDD2B'); " +
         "INSERT INTO nice_words (phrase) VALUES ('Бесподобно! С такой статистикой повышение не за горами) \uD83D\uDE09'); ");
+
 makeSqlRequestByStatement("CREATE TABLE IF NOT EXISTS motivation_words (id SERIAL PRIMARY KEY NOT NULL, phrase CHARACTER (255));");
 makeSqlRequestByStatement("INSERT INTO motivation_words (phrase) VALUES ('Знаю, ты можешь лучше) \uD83D\uDE09'); " +
         "INSERT INTO motivation_words (phrase) VALUES ('Маленькие шаги ведут к большим победам! \uD83D\uDDFA\uFE0F'); " +

@@ -3,7 +3,7 @@ services:
 
   tech_sup_bot:
     build:
-      context: /home/kuiva/TechSupBot  # Путь к Dockerfile второго бота
+      context: /home/kuiva/TechSupBot
       dockerfile: Dockerfile
     container_name: tech_sup_bot
     restart: unless-stopped
@@ -13,7 +13,6 @@ services:
       - "traefik.http.routers.tech_sup_bot.rule=Host(`${HOST_URL}`) && PathPrefix(`/callback/bot_tech_sup/update`)"
       - "traefik.http.routers.tech_sup_bot.entrypoints=websecure8"
       - "traefik.http.routers.tech_sup_bot.tls=true"
-
     environment:
       TECH_BOT_TOKEN: ${TECH_BOT_TOKEN}
       TECH_BOT_URL: ${TECH_BOT_URL}
@@ -23,8 +22,7 @@ services:
       TECH_DATASOURCE_PASSWORD: ${TECH_DATASOURCE_PASSWORD}
       TECH_DATASOURCE_DRIVER_NAME: ${TECH_DATASOURCE_DRIVER_NAME}
     volumes:
-      - ./.env:/app/.env  # Копируем .env в /second-bot
-      - /home/kuiva/TechSupBot/logs:/tech_sup_bot/logs
+      - ./.env:/app/.env
     networks:
       - my-network
 
@@ -57,8 +55,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      kafka:
-        condition: service_healthy
     environment:
       BOT_NAME: ${BOT_NAME}
       BOT_TOKEN: ${BOT_TOKEN}
@@ -74,67 +70,10 @@ services:
       DATASOURCE_DRIVER_NAME: ${DATASOURCE_DRIVER_NAME}
     volumes:
       - ./.env:/dispatcher/.env  # Копируем .env в /app
-      - /home/kuiva/Telegram-KPI-Bot/logs:/dispatcher/logs
     networks:
       - my-network
 
-  # Сервис GoogleSheetService
-  googlesheetservice:
-    build:
-      context: ./GoogleSheetService
-      dockerfile: Dockerfile
-    container_name: GoogleSheetService
-    restart: unless-stopped
-    ports:
-      - ${PORT_GOOGLESHEETS}:${PORT_GOOGLESHEETS}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-    environment:
-      PORT_GOOGLESHEETS: ${PORT_GOOGLESHEETS}
-      CREDENTIALS_FILE_PATH: ${CREDENTIALS_FILE_PATH}
-      KAFKA_PORT: ${KAFKA_PORT}
-      KAFKA_HOSTNAME: ${KAFKA_HOSTNAME}
-      SPREADSHEET_ID: ${SPREADSHEET_ID}
-      DATASOURCE_URL: ${DATASOURCE_URL}
-      DATASOURCE_USERNAME: ${DATASOURCE_USERNAME}
-      DATASOURCE_PASSWORD: ${DATASOURCE_PASSWORD}
-      DATASOURCE_DRIVER_NAME: ${DATASOURCE_DRIVER_NAME}
-    volumes:
-      - ./.env:/app/.env  # Копируем .env в /app
-      - /home/kuiva/Telegram-KPI-Bot/logs:/app/logs
-    networks:
-      - my-network
 
-  # Сервис Kafka
-  kafka:
-    image: bitnami/kafka:latest
-    container_name: kafka
-    ports:
-      - ${KAFKA_PORT}:${KAFKA_PORT}
-    environment:
-      - KAFKA_CFG_NODE_ID=1
-      - KAFKA_KRAFT_CLUSTER_ID=kuivamachineclusterid
-      - KAFKA_CFG_PROCESS_ROLES=controller,broker
-      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9091
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9091
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://${KAFKA_HOSTNAME}:${KAFKA_PORT}
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
-      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
-    restart: unless-stopped
-    healthcheck:
-      test: [ "CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1" ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-    volumes:
-      - kafka_data:/bitnami/kafka  # Именованный volume для данных Kafka
-    networks:
-      - my-network
 
   # Сервис PostgreSQL
   postgres:
@@ -154,7 +93,7 @@ services:
       - ${PORT_POSTGRES}:5432
     restart: unless-stopped
     volumes:
-      - postgres_data:/var/lib/postgresql/data  # Именованный volume для данных PostgreSQL
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - my-network
 
@@ -170,7 +109,8 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./tls.yml:/etc/traefik/tls.yml
-      - /home/kuiva/certs:/etc/traefik/certs
+      - /etc/letsencrypt/live/musthavecasekpi.aleksz5h.beget.tech-0003/:/etc/traefik/certs:ro
+      - /etc/letsencrypt/archive/musthavecasekpi.aleksz5h.beget.tech-0003/:/etc/traefik/archive:ro
     labels:
       - "traefik.enable=true"
 
@@ -207,13 +147,7 @@ services:
       - my-network
 # Определение volumes
 volumes:
-  kafka_data:
-    driver: local
   postgres_data:
-    driver: local
-  dispatcher_logs:
-    driver: local
-  googlesheetservice_logs:
     driver: local
   traefik-certs:
     driver: local

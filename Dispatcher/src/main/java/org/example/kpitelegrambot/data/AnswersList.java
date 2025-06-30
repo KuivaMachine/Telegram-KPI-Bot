@@ -70,7 +70,9 @@ public enum AnswersList {
     ADMIN_COMMANDS("""
     Admin commands list:
     <b>/forget_me</b> - Удалить текущего пользователя из Employees
-    <b>/update_table</b> - Ручное обновление таблицы
+    <b>/update_table</b> - Ручное обновление таблицы за последний месяц
+    <b>/enable_admin_notification</b> - Включить ежедневное оповещение
+    <b>/disable_admin_notification</b> - Отключить ежедневное оповещение
     """),
     FORGET_ME("""
                 Начнем с начала)

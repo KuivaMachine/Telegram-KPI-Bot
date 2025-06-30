@@ -2,9 +2,10 @@ package org.example.kpitelegrambot.bot.handlers;
 
 import lombok.RequiredArgsConstructor;
 import org.example.kpitelegrambot.bot.TelegramBot;
+import org.example.kpitelegrambot.bot.configuration.SettingsManager;
 import org.example.kpitelegrambot.bot.keyboards.InlineKeyboardFactory;
 import org.example.kpitelegrambot.data.AnswersList;
-import org.example.kpitelegrambot.googlesheets.KafkaProducer;
+import org.example.kpitelegrambot.googlesheets.StatisticHandler;
 import org.example.kpitelegrambot.postgresql.data.EmployeePost;
 import org.example.kpitelegrambot.postgresql.data.EmployeeStatus;
 import org.example.kpitelegrambot.postgresql.entity.Employee;
@@ -24,8 +25,8 @@ public class UpdateHandler implements Handler {
     TelegramBot telegramBot;
     private final PrinterHandler printerHandler;
     private final PackerHandler packerHandler;
-    private final KafkaProducer kafkaProducer;
-
+    private final StatisticHandler statisticHandler;
+    private final SettingsManager settingsManager;
     public void register(TelegramBot telegramBot) {
         this.telegramBot = telegramBot;
     }
@@ -43,6 +44,16 @@ public class UpdateHandler implements Handler {
             employeeService.deleteEmployeeByChatId(chatId);
             return forgetEmployeeProcess(sendMessage);
         }
+        if (text.equals("/enable_admin_notification")) {
+            settingsManager.setNotificationEnabled(true);
+            sendMessage.setText("Включил ежедневное оповещение");
+            return sendMessage;
+        }
+        if (text.equals("/disable_admin_notification")) {
+            settingsManager.setNotificationEnabled(false);
+            sendMessage.setText("Выключил ежедневное оповещение");
+            return sendMessage;
+        }
         if (text.equals("/kuiva_machine")) {
            sendMessage.setText(AnswersList.ADMIN_COMMANDS.getText());
            sendMessage.setParseMode("HTML");
@@ -50,7 +61,7 @@ public class UpdateHandler implements Handler {
         }
         if (text.equals("/update_table")) {
             sendMessage.setText("Обновляю таблицу KPI за текущий месяц");
-            kafkaProducer.send("commands", "UPDATE");
+            statisticHandler.processUpdateTable();
             return sendMessage;
         }
         if (text.equals("/help")) {

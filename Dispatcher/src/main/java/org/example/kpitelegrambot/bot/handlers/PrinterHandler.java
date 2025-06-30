@@ -6,7 +6,7 @@ import org.example.kpitelegrambot.bot.keyboards.InlineKeyboardFactory;
 import org.example.kpitelegrambot.bot.keyboards.ReplyKeyboardFactory;
 import org.example.kpitelegrambot.data.AnswersList;
 import org.example.kpitelegrambot.data.ButtonLabels;
-import org.example.kpitelegrambot.googlesheets.KafkaProducer;
+import org.example.kpitelegrambot.googlesheets.StatisticHandler;
 import org.example.kpitelegrambot.postgresql.DAO.PostgreSQLController;
 import org.example.kpitelegrambot.postgresql.data.EmployeeStatus;
 import org.example.kpitelegrambot.postgresql.entity.Employee;
@@ -22,7 +22,7 @@ public class PrinterHandler implements JobHandler {
     DateService dateService = new DateService();
     private final EmployeeService employeeService;
     private final PostgreSQLController postgres;
-    private final KafkaProducer kafkaProducer;
+    private final StatisticHandler statisticHandler;
     private final CallbackQueryHandler callbackQueryHandler;
     @Override
     public SendMessage process(TelegramBot telegramBot, Update update, Employee currentEmployee, SendMessage sendMessage) {
@@ -92,7 +92,7 @@ public class PrinterHandler implements JobHandler {
     private SendMessage deleteLastRecord(Employee currentEmployee, SendMessage sendMessage) {
         if (postgres.deleteLastPrinterRecord(currentEmployee)) {
             sendMessage.setText(AnswersList.DELETE_COMPLETE.getText());
-            kafkaProducer.send("commands", "UPDATE");
+            statisticHandler.processUpdateTable();
         } else {
             sendMessage.setText(AnswersList.DELETE_UNCOMPLETED.getText());
         }
