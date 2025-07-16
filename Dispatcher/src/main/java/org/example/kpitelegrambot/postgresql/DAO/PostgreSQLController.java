@@ -272,14 +272,10 @@ public class PostgreSQLController {
 
     /**
      * Возвращает случайную фразу для печатника из таблиц nice_words и motivation_words, в зависимости от количества напечатанной продукции.
-     * @param currentEmployee печатник
+     * @param printsNum количетво напечатанных заказов
      * @return фраза типа String
      */
-    public String getNicePhraseToPrinter(Employee currentEmployee) {
-        String bufferTableName = String.format("statistic_buffer_from_printer_%s", currentEmployee.getChatId());
-        String sqlGetRequest = String.format("SELECT (prints_num) FROM %s WHERE id = 1;", bufferTableName);
-        List<String> result = makeSelectRequest(sqlGetRequest);
-        int printsNum = Integer.parseInt(result.getFirst());
+    public String getNicePhraseToPrinter(int printsNum) {
         if (printsNum > 100) {
             return getRandomPhrase("nice_words");
         } else {

@@ -125,7 +125,7 @@ public class CallbackQueryHandler implements Handler {
         if (addedStat != null) {
             currentEmployee.setStatus(EmployeeStatus.SAVED);
             employeeService.save(currentEmployee);
-            sendMessage.setText(String.format("Я все записал!\n%s", postgres.getNicePhraseToPrinter(currentEmployee)));
+            sendMessage.setText(String.format("Я все записал!\n%s", postgres.getNicePhraseToPrinter(Integer.parseInt(addedStat.getPrints_num()))));
             CompletableFuture.runAsync(()->statisticHandler.processPrinterStatistic(addedStat))
                     .exceptionally(exception->{
                         log.error("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ДОБАВЛЕНИЯ СТАТИСТИКИ ПЕЧАТНИКА В GOOGLE ТАБЛИЦУ - {}", exception.getMessage());
