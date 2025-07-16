@@ -23,13 +23,14 @@ import java.util.concurrent.CompletableFuture;
 @Component
 @RequiredArgsConstructor
 public class PrinterHandler implements JobHandler {
-    DateService dateService = new DateService();
+
     private final EmployeeService employeeService;
     private final PostgreSQLController postgres;
     private final StatisticHandler statisticHandler;
     private final CallbackQueryHandler callbackQueryHandler;
+
     @Override
-    public SendMessage process(TelegramBot telegramBot, Update update, Employee currentEmployee, SendMessage sendMessage) {
+    public SendMessage process(Update update, Employee currentEmployee, SendMessage sendMessage) {
         sendMessage.setText(AnswersList.PRINTER_INVALID_COMMAND.getText());
         String receivedMessage = update.getMessage().getText();
         if (receivedMessage.equals("/start")) {
@@ -64,7 +65,7 @@ public class PrinterHandler implements JobHandler {
             System.out.println("received another date"+receivedMessage);
             String date = receivedMessage.strip().replace(".","-");
             System.out.println("saved date"+date);
-            if (date.matches("\\d{2}.-?\\d{2}.-?\\d{4}")&&dateService.isValidDate(date)) {
+            if (date.matches("\\d{2}.-?\\d{2}.-?\\d{4}")&&DateService.isValidDate(date)) {
                 return callbackQueryHandler.fillDateProcess(date, currentEmployee, sendMessage);
             }else{
                 return invalidAnotherDateProcess(sendMessage, receivedMessage);

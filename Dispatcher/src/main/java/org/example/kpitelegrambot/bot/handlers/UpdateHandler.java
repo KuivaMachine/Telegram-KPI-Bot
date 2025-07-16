@@ -84,8 +84,8 @@ public class UpdateHandler implements Handler {
         }
 
         return (switch (job) {
-            case PACKER -> packerHandler.process(telegramBot, update, employee, sendMessage);
-            case PRINTER -> printerHandler.process(telegramBot, update, employee, sendMessage);
+            case PACKER -> packerHandler.process(update, employee, sendMessage);
+            case PRINTER -> printerHandler.process(update, employee, sendMessage);
             case UNKNOWN -> registrationProcess(sendMessage, employee, update);
         });
 

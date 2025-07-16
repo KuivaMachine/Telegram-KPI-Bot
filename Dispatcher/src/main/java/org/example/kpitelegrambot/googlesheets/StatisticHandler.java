@@ -18,11 +18,10 @@ public class StatisticHandler {
 
 
     private final SheetIdService sheetIdService;
-    private final DateService dateService;
     private final GoogleSheetsService googleSheetsService;
 
     public void processPrinterStatistic(PrinterStatistic printerStatistic) {
-        String sheetName = googleSheetsService.getHeaderTitle(dateService.parseStringToLocalDate(printerStatistic.getDate(), "yyyy-MM-dd"));
+        String sheetName = googleSheetsService.getHeaderTitle(DateService.parseStringToLocalDate(printerStatistic.getDate(), "yyyy-MM-dd"));
         SheetId sheetId = sheetIdService.findSheetIdByTitle(sheetName);
         log.info(String.format("ОБРАБАТЫВАЕТСЯ ЗАПРОС НА ВСТАВКУ СТАТИСТИКИ ПЕЧАТНИКА %s в таблицу '%s'", printerStatistic.getFio(), sheetName));
         if (sheetId != null) {
@@ -35,7 +34,7 @@ public class StatisticHandler {
     }
 
     public void processPackerStatistic(PackerStatistic statistic) {
-        String sheetName = googleSheetsService.getHeaderTitle(dateService.parseStringToLocalDate(statistic.getDate(), "yyyy-MM-dd"));
+        String sheetName = googleSheetsService.getHeaderTitle(DateService.parseStringToLocalDate(statistic.getDate(), "yyyy-MM-dd"));
         SheetId sheetId = sheetIdService.findSheetIdByTitle(sheetName);
         log.info(String.format("ОБРАБАТЫВАЕТСЯ ЗАПРОС НА ВСТАВКУ СТАТИСТИКИ СБОРЩИКА В ТАБЛИЦУ '%s' В ДАТУ %s", sheetName, statistic.getDate()));
         if (sheetId != null) {

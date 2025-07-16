@@ -19,23 +19,34 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Обработчик событий для сборщика
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor
 public class PackerHandler implements JobHandler {
     private final EmployeeService employeeService;
     private final PostgreSQLController postgres;
-    private final DateService dateService;
     private final StatisticHandler statisticHandler;
 
+    /**
+     * Основной обработчик сообщения
+     * @param update обновление
+     * @param currentEmployee сборщик
+     * @param sendMessage сообщение
+     * @return сообщение класса SendMessage
+     */
     @Override
-    public SendMessage process(TelegramBot telegramBot, Update update, Employee currentEmployee, SendMessage sendMessage) {
+    public SendMessage process(Update update, Employee currentEmployee, SendMessage sendMessage) {
         sendMessage.setText(AnswersList.PACKER_INVALID_COMMAND.getText());
         String receivedMessage = update.getMessage().getText();
 
+        // ЕСЛИ СБОРЩИК НАЧАЛ ПЕРЕПИСКУ С НАЧАЛА
         if (receivedMessage.equals("/start")) {
             return sayHelloProcess(sendMessage, currentEmployee);
         }
+        // ЕСЛИ СБОРЩИК УДАЛЯЕТ СТАТИСТИКУ
         if (currentEmployee.getStatus().equals(EmployeeStatus.DELETING)) {
             if (receivedMessage.equals(ButtonLabels.YES.getLabel())) {
                 return deleteLastRecord(currentEmployee, sendMessage);
@@ -44,20 +55,26 @@ public class PackerHandler implements JobHandler {
                 return cancelAddingStatistic(sendMessage, currentEmployee);
             }
         }
+        // ЕСЛИ СБОРЩИК НАЖАЛ "ОТМЕНИТЬ ДОБАВЛЕНИЕ"
         if (receivedMessage.equals(ButtonLabels.CANCEL_ADDING.getLabel())) {
             return cancelAddingStatistic(sendMessage, currentEmployee);
         }
+        // ЕСЛИ СТАТУС СБОРЩИКА "SAVED"
         if (currentEmployee.getStatus().equals(EmployeeStatus.SAVED)) {
+            // ЕСЛИ НАЖАЛ "Добавить новую статистику"
             if (receivedMessage.equals(ButtonLabels.ADD_NEW_STATISTICS.getLabel())) {
                 return createNewStatisticPost(currentEmployee, sendMessage);
             }
+            // ЕСЛИ НАЖАЛ "Показать последнюю запись"
             if (receivedMessage.equals(ButtonLabels.SHOW_STATISTIC.getLabel())) {
                 return showLastRecord(currentEmployee, sendMessage);
             }
+            // ЕСЛИ НАЖАЛ "Удалить последнюю запись"
             if (receivedMessage.equals(ButtonLabels.DELETE_LAST_RECORD.getLabel())) {
                 return deletingLastRecordProcess(currentEmployee, sendMessage);
             }
         }
+        // ЕСЛИ ОЖИДАЕТСЯ ЧИСЛО СОБРАННЫХ ЗАКАЗОВ ДЛЯ WB_MHC
         if (currentEmployee.getStatus().equals(EmployeeStatus.WAITING_WB_MHC)) {
             if (receivedMessage.matches("\\d{1,4}")) {
                 return fillWBMHCNumberProcess(sendMessage, currentEmployee, receivedMessage);
@@ -65,6 +82,7 @@ public class PackerHandler implements JobHandler {
                 return invalidNumberProcess(sendMessage, receivedMessage);
             }
         }
+        // ЕСЛИ ОЖИДАЕТСЯ ЧИСЛО СОБРАННЫХ ЗАКАЗОВ ДЛЯ SIGNUM
         if (currentEmployee.getStatus().equals(EmployeeStatus.WAITING_SIGNUM)) {
             if (receivedMessage.matches("\\d{1,4}")) {
                 return fillWbSignumNumberProcess(sendMessage, currentEmployee, receivedMessage);
@@ -72,6 +90,7 @@ public class PackerHandler implements JobHandler {
                 return invalidNumberProcess(sendMessage, receivedMessage);
             }
         }
+        // ЕСЛИ ОЖИДАЕТСЯ ЧИСЛО СОБРАННЫХ ЗАКАЗОВ ДЛЯ SL
         if (currentEmployee.getStatus().equals(EmployeeStatus.WAITING_SL)) {
             if (receivedMessage.matches("\\d{1,4}")) {
                 return fillWbSlNumberProcess(sendMessage, currentEmployee, receivedMessage);
@@ -79,6 +98,7 @@ public class PackerHandler implements JobHandler {
                 return invalidNumberProcess(sendMessage, receivedMessage);
             }
         }
+        // ЕСЛИ ОЖИДАЕТСЯ ЧИСЛО СОБРАННЫХ ЗАКАЗОВ ДЛЯ OZON
         if (currentEmployee.getStatus().equals(EmployeeStatus.WAITING_OZON)) {
             if (receivedMessage.matches("\\d{1,4}")) {
                 return fillOzonNumberProcess(sendMessage, currentEmployee, receivedMessage);
@@ -86,6 +106,7 @@ public class PackerHandler implements JobHandler {
                 return invalidNumberProcess(sendMessage, receivedMessage);
             }
         }
+        // ЕСЛИ ОЖИДАЕТСЯ ЧИСЛО СОБРАННЫХ ЗАКАЗОВ ДЛЯ YANDEX
         if (currentEmployee.getStatus().equals(EmployeeStatus.WAITING_YANDEX)) {
             if (receivedMessage.matches("\\d{1,4}")) {
                 return fillYandexNumberProcess(sendMessage, currentEmployee, receivedMessage);
@@ -93,6 +114,7 @@ public class PackerHandler implements JobHandler {
                 return invalidNumberProcess(sendMessage, receivedMessage);
             }
         }
+        // ЕСЛИ ОЖИДАЕТСЯ ЧИСЛО СОБРАННЫХ ЗАКАЗОВ ДЛЯ PRINT_KID
         if (currentEmployee.getStatus().equals(EmployeeStatus.WAITING_PRINT_KID)) {
             if (receivedMessage.matches("\\d{1,4}")) {
                 return fillPrintKidNumberProcess(sendMessage, currentEmployee, receivedMessage);
@@ -100,6 +122,7 @@ public class PackerHandler implements JobHandler {
                 return invalidNumberProcess(sendMessage, receivedMessage);
             }
         }
+        // ЕСЛИ ОЖИДАЕТСЯ ЧИСЛО СОБРАННЫХ ЗАКАЗОВ ДЛЯ FBO)
         if (currentEmployee.getStatus().equals(EmployeeStatus.WAITING_FBO)) {
             if (receivedMessage.matches("\\d{1,4}")) {
                 return fillFboNumberProcess(sendMessage, currentEmployee, receivedMessage);
@@ -107,6 +130,7 @@ public class PackerHandler implements JobHandler {
                 return invalidNumberProcess(sendMessage, receivedMessage);
             }
         }
+        // ЕСЛИ СБОРЩИК ВВЕЛ СООБЩЕНИЕ, КОГДА ОЖИДАЕТСЯ ВЫБОР ДАТЫ
         if (currentEmployee.getStatus().equals(EmployeeStatus.WAITING_DATE)) {
             return invalidDateProcess(sendMessage);
         }
@@ -163,7 +187,7 @@ public class PackerHandler implements JobHandler {
 
     private SendMessage fillFboNumberProcess(SendMessage sendMessage, Employee currentEmployee, String fbo) {
         postgres.addValueInBufferFromPacker(currentEmployee, Integer.parseInt(fbo), "fbo");
-        postgres.addValueInBufferFromPacker(currentEmployee, dateService.getLocalDate(), "date");
+        postgres.addValueInBufferFromPacker(currentEmployee, DateService.getLocalDate(), "date");
 
         PackerStatistic statistic = postgres.moveDataFromPackerBufferToMainTable(currentEmployee);
         if (statistic != null) {

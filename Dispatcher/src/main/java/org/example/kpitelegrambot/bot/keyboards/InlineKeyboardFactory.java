@@ -36,26 +36,24 @@ public class InlineKeyboardFactory {
     }
 
     public static InlineKeyboardMarkup getDateChoiceKeyboard() {
-        DateService dateService = new DateService();
-
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row1 = new ArrayList<>();
 
 
         InlineKeyboardButton dayBefYesBut = new InlineKeyboardButton();
-        dayBefYesBut.setText(dateService.getCurrentDate());
-        dayBefYesBut.setCallbackData(dateService.getCurrentDate());
+        dayBefYesBut.setText(DateService.getCurrentDate());
+        dayBefYesBut.setCallbackData(DateService.getCurrentDate());
         row1.add(dayBefYesBut);
 
         InlineKeyboardButton yesterdayBut = new InlineKeyboardButton();
-        yesterdayBut.setText(dateService.getYesterdayDate());
-        yesterdayBut.setCallbackData(dateService.getYesterdayDate());
+        yesterdayBut.setText(DateService.getYesterdayDate());
+        yesterdayBut.setCallbackData(DateService.getYesterdayDate());
         row1.add(yesterdayBut);
 
         InlineKeyboardButton todayBut = new InlineKeyboardButton();
-        todayBut.setText(dateService.getDBYDate());
-        todayBut.setCallbackData(dateService.getDBYDate());
+        todayBut.setText(DateService.getDBYDate());
+        todayBut.setCallbackData(DateService.getDBYDate());
         row1.add(todayBut);
 
         InlineKeyboardButton anotherDateBut = new InlineKeyboardButton();
@@ -89,21 +87,6 @@ public class InlineKeyboardFactory {
         keyboard.add(row2);
 
         inlineKeyboardMarkup.setKeyboard(keyboard);
-        return inlineKeyboardMarkup;
-    }
-
-    public  static InlineKeyboardMarkup getShowReceivedStatistic(){
-        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-
-        List<InlineKeyboardButton> row1 = new ArrayList<>();
-        InlineKeyboardButton show = new InlineKeyboardButton();
-        show.setText(ButtonLabels.SHOW_STATISTIC.getLabel());
-        show.setCallbackData(ButtonLabels.SHOW_STATISTIC.getCallback());
-
-        row1.add(show);
-        rows.add(row1);
-        inlineKeyboardMarkup.setKeyboard(rows);
         return inlineKeyboardMarkup;
     }
 

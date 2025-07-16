@@ -18,9 +18,11 @@ import org.example.kpitelegrambot.postgresql.service.EmployeeService;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
-
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Обработчик событий от callback кнопок inline-клавиатуры
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -30,19 +32,23 @@ public class CallbackQueryHandler implements Handler {
     private final PostgreSQLController postgres;
     private final StatisticHandler statisticHandler;
 
-    DateService dateService = new DateService();
-
+    /**
+     * Основной обработчик события.
+     * @param update объект события
+     * @return сообщение класса SendMessage
+     */
     @Override
     public SendMessage process(Update update) {
+        // ДОСТАЕМ CHAT_ID И CALLBACK ИЗ UPDATE, НАХОДИМ ПОЛЬЗОВАТЕЛЯ
         Long chatId = update.getCallbackQuery().getMessage().getChatId();
         String callback = update.getCallbackQuery().getData();
         SendMessage sendMessage = new SendMessage();
         Employee currentEmployee = employeeService.getEmployeeByChatId(chatId);
-
+        // ДОСТАЕМ CHAT_ID И CALLBACK ИЗ UPDATE, НАХОДИМ ПОЛЬЗОВАТЕЛЯ
         sendMessage.setChatId(chatId);
         sendMessage.setText(AnswersList.CALLBACK_INVALID_COMMAND.getText());
         sendMessage.setParseMode("HTML");
-
+        // ЕСЛИ ОЖИДАЕТСЯ ВВОД ДОЛЖНОСТИ
         if (currentEmployee.getStatus().equals(EmployeeStatus.WAITING_JOB)) {
             if (callback.equals(ButtonLabels.I_AM_PACKER.getCallback())) {
                 return addNewPacker(sendMessage, currentEmployee);
@@ -51,6 +57,7 @@ public class CallbackQueryHandler implements Handler {
                 return fillWorkTimeProcess(sendMessage, currentEmployee);
             }
         }
+        // ЕСЛИ ОЖИДАЕТСЯ ВВОД РАБОЧЕГО ВРЕМЕНИ (ДЕНЬ/НОЧЬ)
         if (currentEmployee.getStatus().equals(EmployeeStatus.WAITING_WORKTIME)) {
             if (callback.equals(DayNight.DAY.getCallback())) {
                 return addNewPrinter(sendMessage, currentEmployee, DayNight.DAY);
@@ -59,6 +66,7 @@ public class CallbackQueryHandler implements Handler {
                 return addNewPrinter(sendMessage, currentEmployee, DayNight.NIGHT);
             }
         }
+        // ЕСЛИ ОЖИДАЕТСЯ ВВОД ДАТЫ
         if (currentEmployee.getStatus().equals(EmployeeStatus.WAITING_DATE)) {
             if (callback.matches("^\\d{2}-\\d{2}-\\d{4}$")) {
                 return fillDateProcess(callback, currentEmployee, sendMessage);
@@ -71,6 +79,12 @@ public class CallbackQueryHandler implements Handler {
         return sendMessage;
     }
 
+    /**
+     * Предлагает пользователю ввести свою дату
+     * @param currentEmployee пользователь
+     * @param sendMessage сообщение
+     * @return сообщение SendMessage
+     */
     private SendMessage anotherDateProcess(Employee currentEmployee, SendMessage sendMessage) {
         currentEmployee.setStatus(EmployeeStatus.WAITING_ANOTHER_DATE);
         employeeService.save(currentEmployee);
@@ -79,8 +93,13 @@ public class CallbackQueryHandler implements Handler {
     }
 
 
+    /**
+     * Предлагает пользователю ввести время работы (день или ночь)
+     * @param currentEmployee пользователь
+     * @param sendMessage сообщение
+     * @return сообщение SendMessage
+     */
     private SendMessage fillWorkTimeProcess(SendMessage sendMessage, Employee currentEmployee) {
-
         currentEmployee.setStatus(EmployeeStatus.WAITING_WORKTIME);
         employeeService.save(currentEmployee);
         sendMessage.setText("""
@@ -90,15 +109,23 @@ public class CallbackQueryHandler implements Handler {
         return sendMessage;
     }
 
+    /**
+     * Обрабатывает callback даты (добавление статистики печатника)
+     * @param callback дата
+     * @param currentEmployee пользователь
+     * @param sendMessage сообщение
+     * @return сообщение SendMessage
+     */
     SendMessage fillDateProcess(String callback, Employee currentEmployee, SendMessage sendMessage) {
-        String nicePhrase;
-        postgres.addValueInBufferFromPrinter(currentEmployee, dateService.parseStringToSqlDate(callback), "date");
-        nicePhrase = postgres.getNicePhraseToPrinter(currentEmployee);
+        // ДОБАВЛЯЕМ ДАННЫЕ В БУФЕР
+        postgres.addValueInBufferFromPrinter(currentEmployee, DateService.parseStringToSqlDate(callback), "date");
+        // ПЕРЕНОСИМ ДАННЫЕ СТАТИСТИКИ ИЗ БУФЕРА В ТАБЛИЦУ
         PrinterStatistic addedStat = postgres.moveDataFromPrinterBufferToMainTable(currentEmployee);
+        // ЕСЛИ УСПЕШНО, ВОЗВРАЩАЕМ ОТВЕТ И АСИНХРОННО ОБНОВЛЯЕМ GOOGLE ТАБЛИЦУ
         if (addedStat != null) {
             currentEmployee.setStatus(EmployeeStatus.SAVED);
             employeeService.save(currentEmployee);
-            sendMessage.setText(String.format("Я все записал!\n%s", nicePhrase));
+            sendMessage.setText(String.format("Я все записал!\n%s", postgres.getNicePhraseToPrinter(currentEmployee)));
             CompletableFuture.runAsync(()->statisticHandler.processPrinterStatistic(addedStat))
                     .exceptionally(exception->{
                         log.error("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ДОБАВЛЕНИЯ СТАТИСТИКИ ПЕЧАТНИКА В GOOGLE ТАБЛИЦУ - {}", exception.getMessage());
@@ -111,6 +138,13 @@ public class CallbackQueryHandler implements Handler {
         return sendMessage;
     }
 
+    /**
+     * Добавляет нового печатника в базу и обновляет google таблицу
+     * @param sendMessage сообщение SendMessage
+     * @param currentEmployee пользователь
+     * @param workTime enum класса DayNight
+     * @return сообщение SendMessage
+     */
     private SendMessage addNewPrinter(SendMessage sendMessage, Employee currentEmployee, DayNight workTime) {
         currentEmployee.setWorkTime(workTime);
         currentEmployee.setJob(EmployeePost.PRINTER);
@@ -129,6 +163,12 @@ public class CallbackQueryHandler implements Handler {
         return sendMessage;
     }
 
+    /**
+     * Добавляет нового сборщика в базу и обновляет google таблицу
+     * @param sendMessage сообщение SendMessage
+     * @param currentEmployee пользователь
+     * @return сообщение SendMessage
+     */
     private SendMessage addNewPacker(SendMessage sendMessage, Employee currentEmployee) {
         currentEmployee.setJob(EmployeePost.PACKER);
         currentEmployee.setStatus(EmployeeStatus.SAVED);
