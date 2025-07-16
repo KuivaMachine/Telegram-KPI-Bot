@@ -46,7 +46,7 @@ public class GoogleSheetsConfig {
     public Sheets getSheetService() throws IOException, GeneralSecurityException {
         final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
         return new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
-                .setApplicationName(applicationName)
+                .setApplicationName("KPITelegramBot")
                 .build();
     }
 }

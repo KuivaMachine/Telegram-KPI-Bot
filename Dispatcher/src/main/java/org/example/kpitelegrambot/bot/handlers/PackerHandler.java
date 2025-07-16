@@ -1,6 +1,7 @@
 package org.example.kpitelegrambot.bot.handlers;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.example.kpitelegrambot.bot.TelegramBot;
 import org.example.kpitelegrambot.bot.keyboards.ReplyKeyboardFactory;
 import org.example.kpitelegrambot.data.AnswersList;
@@ -16,7 +17,9 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
+import java.util.concurrent.CompletableFuture;
 
+@Log4j2
 @Component
 @RequiredArgsConstructor
 public class PackerHandler implements JobHandler {
@@ -115,7 +118,11 @@ public class PackerHandler implements JobHandler {
     private SendMessage deleteLastRecord(Employee currentEmployee, SendMessage sendMessage) {
         if (postgres.deleteLastPackerRecord()) {
             sendMessage.setText(AnswersList.DELETE_COMPLETE.getText());
-            statisticHandler.processUpdateTable();
+            CompletableFuture.runAsync(statisticHandler::processUpdateTable)
+                    .exceptionally(exception->{
+                        log.error("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ОБНОВЛЕНИЯ ТАБЛИЦЫ - {}", exception.getMessage());
+                        return null;
+                    });
         } else {
             sendMessage.setText(AnswersList.DELETE_UNCOMPLETED.getText());
         }
@@ -160,11 +167,17 @@ public class PackerHandler implements JobHandler {
 
         PackerStatistic statistic = postgres.moveDataFromPackerBufferToMainTable(currentEmployee);
         if (statistic != null) {
-            String nicePhrase = postgres.getNicePhrase();
+            String nicePhrase = postgres.getRandomPhrase("nice_words");
             currentEmployee.setStatus(EmployeeStatus.SAVED);
             employeeService.save(currentEmployee);
             sendMessage.setText(String.format("Я все записал!\n%s", nicePhrase));
-            statisticHandler.processPackerStatistic(statistic);
+            CompletableFuture.runAsync(
+                    () -> statisticHandler.processPackerStatistic(statistic)
+            ).exceptionally(exception-> {
+                log.error("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ДОБАВЛЕНИЯ СТАТИСТИКИ СБОРКИ В GOOGLE ТАБЛИЦУ - {}", exception.getMessage());
+                return null;
+            });
+
         } else {
             sendMessage.setText(AnswersList.MOVE_DATA_ERROR.getText());
         }

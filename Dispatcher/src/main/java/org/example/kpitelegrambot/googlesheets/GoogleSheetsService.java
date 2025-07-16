@@ -18,7 +18,9 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.*;
-
+/**
+ Основной класс для создания таблицы и заполнения данными
+ */
 @Log4j2
 @Component
 public class GoogleSheetsService {
@@ -43,14 +45,17 @@ public class GoogleSheetsService {
         this.sheetIdService = sheetIdService;
         this.postgres = postgres;
     }
-
+    /**
+     * Находит лист (sheet) в таблице по SPREADSHEET_ID по названию
+     * @param title Имя пользователя (не может быть null)
+     * @return ID листа, если найден, иначе -1
+     */
     private int findSheetIdByTitle(String title) {
         try {
             Spreadsheet spreadsheet = sheetService.spreadsheets().get(SPREADSHEET_ID).execute();
             List<Sheet> sheets = spreadsheet.getSheets();
             for (Sheet sheet : sheets) {
                 if (title.equals(sheet.getProperties().getTitle())) {
-                    log.info(String.valueOf(sheet.getProperties().getSheetId()));
                     return sheet.getProperties().getSheetId();
                 }
             }
@@ -60,7 +65,10 @@ public class GoogleSheetsService {
         return -1;
     }
 
-
+    /**
+     * Генерирует случайное число от 7 до 11 цифр для ID листа
+     * @return SheetId
+     */
     private int generateSheetId() {
         Random random = new Random();
         int length = 3 + random.nextInt(5); // 7 + (0..4) = 7..11
@@ -69,6 +77,11 @@ public class GoogleSheetsService {
         return min + random.nextInt(max - min + 1);
     }
 
+    /**
+     * Создает новый лист, если его нет в таблице
+     * @param sheetTitle Имя нового листа
+     * @return SheetId листа
+     */
     public SheetId createNewSheet(String sheetTitle) {
 
         //ЕСЛИ ТАБЛИЦА С ТАКИМ НАЗВАНИЕМ УЖЕ ЕСТЬ
@@ -99,16 +112,10 @@ public class GoogleSheetsService {
         return new SheetId(sheetId, sheetTitle);
     }
 
-    private String createNewSpreadSheet(String title) {
-        Spreadsheet newTable = new Spreadsheet()
-                .setProperties(new SpreadsheetProperties().setTitle(title));
-        try {
-            return sheetService.spreadsheets().create(newTable).execute().getSpreadsheetId();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
+    /**
+     * Выполняет запрос на полную очистку листа таблицы по id
+     * @param sheetId id листа
+     */
     private void cleanTable(SheetId sheetId) {
 
         ClearValuesRequest clearValuesRequest = new ClearValuesRequest();
@@ -142,6 +149,10 @@ public class GoogleSheetsService {
     }
 
 
+    /**
+     * Выполняет полную очистку листа, генерацию всех полей и формул для каждой ячейки. Создает полный шаблон таблицы со всеми заголовками, без статистики.
+     * @param sheetId id листа
+     */
     private void updateTable(SheetId sheetId) {
         int SHEET_ID = sheetId.getSheetId();
         String title = sheetId.getTitle();
@@ -327,7 +338,6 @@ public class GoogleSheetsService {
                         .setSheetId(SHEET_ID)
                         .setGridProperties(new GridProperties()
                                         .setFrozenRowCount(3)
-                                //.setFrozenColumnCount(frozenColumnCount)
                         ))
                 .setFields("gridProperties.frozenRowCount")));
 
@@ -357,7 +367,7 @@ public class GoogleSheetsService {
         }
         lists.add(numsList);
         data.add(new ValueRange()
-                .setRange(String.format("%s!E3:%s3", title, getColumnLetter(numberOfDaysOfMonth)))
+                .setRange(String.format("%s!E3:%s3", title, getLetterOfColumnByDayNumber(numberOfDaysOfMonth)))
                 .setValues(lists));
 
 
@@ -386,10 +396,10 @@ public class GoogleSheetsService {
         List<List<Object>> general = new ArrayList<>();
         for (int i = 5; i < 5 + marketsNumber; i++) {
             if (labelList.get(i) != null) {
-                general.add(List.of(String.format("=СУММ(E%d:%s%d)", i, getColumnLetter(numberOfDaysOfMonth), i)));
+                general.add(List.of(String.format("=СУММ(E%d:%s%d)", i, getLetterOfColumnByDayNumber(numberOfDaysOfMonth), i)));
             }
         }
-        general.add(List.of(String.format("=СУММ(E%d:%s%d)", 5 + marketsNumber, getColumnLetter(numberOfDaysOfMonth), 5 + marketsNumber)));
+        general.add(List.of(String.format("=СУММ(E%d:%s%d)", 5 + marketsNumber, getLetterOfColumnByDayNumber(numberOfDaysOfMonth), 5 + marketsNumber)));
         data.add(new ValueRange()
                 .setRange((String.format("%s!C5:C%d", title, 5 + marketsNumber)))
                 .setValues(general));
@@ -398,10 +408,10 @@ public class GoogleSheetsService {
         List<List<Object>> averageMarkets = new ArrayList<>();
         for (int i = 5; i < 5 + marketsNumber; i++) {
             if (labelList.get(i) != null) {
-                averageMarkets.add(List.of(String.format("=ЕСЛИОШИБКА(ОКРУГЛ(СРЗНАЧ(E%d:%s%d);0);0)", i, getColumnLetter(numberOfDaysOfMonth), i)));
+                averageMarkets.add(List.of(String.format("=ЕСЛИОШИБКА(ОКРУГЛ(СРЗНАЧ(E%d:%s%d);0);0)", i, getLetterOfColumnByDayNumber(numberOfDaysOfMonth), i)));
             }
         }
-        averageMarkets.add(List.of(String.format("=ЕСЛИОШИБКА(ОКРУГЛ(СРЗНАЧ(E%d:%s%d);0);0)", 5 + marketsNumber, getColumnLetter(numberOfDaysOfMonth), 5 + marketsNumber)));
+        averageMarkets.add(List.of(String.format("=ЕСЛИОШИБКА(ОКРУГЛ(СРЗНАЧ(E%d:%s%d);0);0)", 5 + marketsNumber, getLetterOfColumnByDayNumber(numberOfDaysOfMonth), 5 + marketsNumber)));
         data.add(new ValueRange()
                 .setRange((String.format("%s!D5:D%d", title, 5 + marketsNumber)))
                 .setValues(averageMarkets));
@@ -431,11 +441,11 @@ public class GoogleSheetsService {
         List<List<Object>> generalDayPrinters = new ArrayList<>();
         for (int i = 8 + marketsNumber; i < 8 + marketsNumber + numberOfDayPrinters; i++) {
             if (labelList.get(i) != null) {
-                String rangeGeneral = String.format("E%d:%s%d", i, getColumnLetter(numberOfDaysOfMonth), i);
+                String rangeGeneral = String.format("E%d:%s%d", i, getLetterOfColumnByDayNumber(numberOfDaysOfMonth), i);
                 generalDayPrinters.add(List.of(String.format("=СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"^(\\d+)\"));0)))&\"/\"&ОКРУГЛ(СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s;\"\\/(\\d+)\"));0))))", rangeGeneral, rangeGeneral)));
             }
         }
-        String rangeGeneral = String.format("E%d:%s%d", 8 + marketsNumber + numberOfDayPrinters, getColumnLetter(numberOfDaysOfMonth), 8 + marketsNumber + numberOfDayPrinters);
+        String rangeGeneral = String.format("E%d:%s%d", 8 + marketsNumber + numberOfDayPrinters, getLetterOfColumnByDayNumber(numberOfDaysOfMonth), 8 + marketsNumber + numberOfDayPrinters);
         generalDayPrinters.add(List.of(String.format("=СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"^(\\d+)\"));0)))&\"/\"&ОКРУГЛ(СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s;\"\\/(\\d+)\"));0))))", rangeGeneral, rangeGeneral)));
         data.add(new ValueRange()
                 .setRange(String.format("%s!C%d:C%d", title, 8 + marketsNumber, 8 + marketsNumber + numberOfDayPrinters))
@@ -445,11 +455,11 @@ public class GoogleSheetsService {
         List<List<Object>> averageDayPrinters = new ArrayList<>();
         for (int i = 8 + marketsNumber; i < 8 + marketsNumber + numberOfDayPrinters; i++) {
             if (labelList.get(i) != null) {
-                String rangeDayAverage = String.format("E%d:%s%d", i, getColumnLetter(numberOfDaysOfMonth), i);
+                String rangeDayAverage = String.format("E%d:%s%d", i, getLetterOfColumnByDayNumber(numberOfDaysOfMonth), i);
                 averageDayPrinters.add(List.of(String.format("=ЕСЛИОШИБКА(ОКРУГЛ(СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(REGEXEXTRACT(%s; \"^(\\d+)\")*1;0)))/ARRAYFORMULA(СУММ(ЕСЛИ(ДЛСТР(СЖПРОБЕЛЫ(%s)) > 0; 1; 0)));0)&\"/\"&ОКРУГЛ(СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(REGEXEXTRACT(%s;\"\\/(\\d+)\")*1;0)))/ARRAYFORMULA(СУММ(ЕСЛИ(ДЛСТР(СЖПРОБЕЛЫ(%s)) > 0; 1; 0)));0);\"0/0\")", rangeDayAverage, rangeDayAverage, rangeDayAverage, rangeDayAverage)));
             }
         }
-        String rangeDayAverage = String.format("E%d:%s%d", 8 + marketsNumber + numberOfDayPrinters, getColumnLetter(numberOfDaysOfMonth), 8 + marketsNumber + numberOfDayPrinters);
+        String rangeDayAverage = String.format("E%d:%s%d", 8 + marketsNumber + numberOfDayPrinters, getLetterOfColumnByDayNumber(numberOfDaysOfMonth), 8 + marketsNumber + numberOfDayPrinters);
         averageDayPrinters.add(List.of(String.format("=ЕСЛИОШИБКА(ОКРУГЛ(СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(REGEXEXTRACT(%s; \"^(\\d+)\")*1;0)))/ARRAYFORMULA(СУММ(ЕСЛИ(ДЛСТР(СЖПРОБЕЛЫ(%s)) > 0; 1; 0)));0)&\"/\"&ОКРУГЛ(СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(REGEXEXTRACT(%s;\"\\/(\\d+)\")*1;0)))/ARRAYFORMULA(СУММ(ЕСЛИ(ДЛСТР(СЖПРОБЕЛЫ(%s)) > 0; 1; 0)));0);\"0/0\")", rangeDayAverage, rangeDayAverage, rangeDayAverage, rangeDayAverage)));
         data.add(new ValueRange()
                 .setRange(String.format("%s!D%d:D%d", title, 8 + marketsNumber, 8 + marketsNumber + numberOfDayPrinters))
@@ -458,11 +468,11 @@ public class GoogleSheetsService {
         //СТРОКА "ОБЩЕЕ ДЕНЬ"
         List<Object> formulaGeneralDayPrinter = new ArrayList<>();
         for (int i = 1; i <= numberOfDaysOfMonth; i++) {
-            String range = String.format("%s%d:%s%d", getColumnLetter(i), 8 + marketsNumber, getColumnLetter(i), 7 + numberOfDayPrinters + marketsNumber);
+            String range = String.format("%s%d:%s%d", getLetterOfColumnByDayNumber(i), 8 + marketsNumber, getLetterOfColumnByDayNumber(i), 7 + numberOfDayPrinters + marketsNumber);
             formulaGeneralDayPrinter.add(String.format("=ЕСЛИ(СЧЁТЗ(%s)=0; \"\"; СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"^(\\d+)\"));0)))&\"/\"&ОКРУГЛ(СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s;\"\\/(\\d+)\"));0)))))", range, range, range));
         }
         data.add(new ValueRange()
-                .setRange(String.format("%s!E%d:%s%d", title, 8 + marketsNumber + numberOfDayPrinters, getColumnLetter(numberOfDaysOfMonth), 8 + marketsNumber + numberOfDayPrinters))
+                .setRange(String.format("%s!E%d:%s%d", title, 8 + marketsNumber + numberOfDayPrinters, getLetterOfColumnByDayNumber(numberOfDaysOfMonth), 8 + marketsNumber + numberOfDayPrinters))
                 .setValues(List.of(formulaGeneralDayPrinter)));
 
         //ПОЛЯ НОЧНЫХ ПЕЧАТНИКОВ
@@ -481,11 +491,11 @@ public class GoogleSheetsService {
         List<List<Object>> generalNightPrinters = new ArrayList<>();
         for (int i = 11 + marketsNumber+ numberOfDayPrinters; i < 11 + marketsNumber + numberOfDayPrinters+numberOfNightPrinters; i++) {
             if (labelList.get(i) != null) {
-                String rangeNightGeneral = String.format("E%d:%s%d", i, getColumnLetter(numberOfDaysOfMonth), i);
+                String rangeNightGeneral = String.format("E%d:%s%d", i, getLetterOfColumnByDayNumber(numberOfDaysOfMonth), i);
                 generalNightPrinters.add(List.of(String.format("=СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"^(\\d+)\"));0)))&\"/\"&ОКРУГЛ(СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s;\"\\/(\\d+)\"));0))))", rangeNightGeneral, rangeNightGeneral)));
             }
         }
-        String rangeNightGeneral = String.format("E%d:%s%d", 11 + marketsNumber + numberOfDayPrinters+numberOfNightPrinters, getColumnLetter(numberOfDaysOfMonth), 11 + marketsNumber + numberOfDayPrinters+numberOfNightPrinters);
+        String rangeNightGeneral = String.format("E%d:%s%d", 11 + marketsNumber + numberOfDayPrinters+numberOfNightPrinters, getLetterOfColumnByDayNumber(numberOfDaysOfMonth), 11 + marketsNumber + numberOfDayPrinters+numberOfNightPrinters);
         generalNightPrinters.add(List.of(String.format("=СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"^(\\d+)\"));0)))&\"/\"&ОКРУГЛ(СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s;\"\\/(\\d+)\"));0))))", rangeNightGeneral, rangeNightGeneral)));
         data.add(new ValueRange()
                 .setRange(String.format("%s!C%d:C%d", title,  11 + marketsNumber + numberOfDayPrinters, 11 + marketsNumber + numberOfDayPrinters+numberOfNightPrinters))
@@ -495,11 +505,11 @@ public class GoogleSheetsService {
         List<List<Object>> averageNightPrinters = new ArrayList<>();
         for (int i = 11 + marketsNumber+ numberOfDayPrinters; i < 11 + marketsNumber + numberOfDayPrinters+numberOfNightPrinters; i++) {
             if (labelList.get(i) != null) {
-                String rangeNightAverage = String.format("E%d:%s%d", i, getColumnLetter(numberOfDaysOfMonth), i);
+                String rangeNightAverage = String.format("E%d:%s%d", i, getLetterOfColumnByDayNumber(numberOfDaysOfMonth), i);
                 averageNightPrinters.add(List.of(String.format("=ЕСЛИОШИБКА(ОКРУГЛ(СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(REGEXEXTRACT(%s; \"^(\\d+)\")*1;0)))/ARRAYFORMULA(СУММ(ЕСЛИ(ДЛСТР(СЖПРОБЕЛЫ(%s)) > 0; 1; 0)));0)&\"/\"&ОКРУГЛ(СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(REGEXEXTRACT(%s;\"\\/(\\d+)\")*1;0)))/ARRAYFORMULA(СУММ(ЕСЛИ(ДЛСТР(СЖПРОБЕЛЫ(%s)) > 0; 1; 0)));0);\"0/0\")", rangeNightAverage, rangeNightAverage, rangeNightAverage, rangeNightAverage)));
             }
         }
-        String rangeNightAverage = String.format("E%d:%s%d", 11 + marketsNumber + numberOfDayPrinters+numberOfNightPrinters, getColumnLetter(numberOfDaysOfMonth), 11 + marketsNumber + numberOfDayPrinters+numberOfNightPrinters);
+        String rangeNightAverage = String.format("E%d:%s%d", 11 + marketsNumber + numberOfDayPrinters+numberOfNightPrinters, getLetterOfColumnByDayNumber(numberOfDaysOfMonth), 11 + marketsNumber + numberOfDayPrinters+numberOfNightPrinters);
         averageNightPrinters.add(List.of(String.format("=ЕСЛИОШИБКА(ОКРУГЛ(СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(REGEXEXTRACT(%s; \"^(\\d+)\")*1;0)))/ARRAYFORMULA(СУММ(ЕСЛИ(ДЛСТР(СЖПРОБЕЛЫ(%s)) > 0; 1; 0)));0)&\"/\"&ОКРУГЛ(СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(REGEXEXTRACT(%s;\"\\/(\\d+)\")*1;0)))/ARRAYFORMULA(СУММ(ЕСЛИ(ДЛСТР(СЖПРОБЕЛЫ(%s)) > 0; 1; 0)));0);\"0/0\")", rangeNightAverage, rangeNightAverage, rangeNightAverage, rangeNightAverage)));
         data.add(new ValueRange()
                 .setRange(String.format("%s!D%d:D%d", title, 11 + marketsNumber + numberOfDayPrinters, 11 + marketsNumber + numberOfDayPrinters+numberOfNightPrinters ))
@@ -508,11 +518,11 @@ public class GoogleSheetsService {
         //СТРОКА "ОБЩЕЕ НОЧЬ"
         List<Object> formulaGeneralNightPrinter = new ArrayList<>();
         for (int i = 1; i <= numberOfDaysOfMonth; i++) {
-            String range = String.format("%s%d:%s%d", getColumnLetter(i), 11 + numberOfDayPrinters + marketsNumber, getColumnLetter(i), 10 + numberOfDayPrinters + numberOfNightPrinters + marketsNumber);
+            String range = String.format("%s%d:%s%d", getLetterOfColumnByDayNumber(i), 11 + numberOfDayPrinters + marketsNumber, getLetterOfColumnByDayNumber(i), 10 + numberOfDayPrinters + numberOfNightPrinters + marketsNumber);
             formulaGeneralNightPrinter.add(String.format("=ЕСЛИ(СЧЁТЗ(%s)=0; \"\"; СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"^(\\d+)\"));0)))&\"/\"&ОКРУГЛ(СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s;\"\\/(\\d+)\"));0)))))", range, range, range));
         }
         data.add(new ValueRange()
-                .setRange(String.format("%s!E%d:%s%d", title, 11 + numberOfNightPrinters+ marketsNumber + numberOfDayPrinters, getColumnLetter(numberOfDaysOfMonth), 8 + marketsNumber +11 + numberOfNightPrinters+ marketsNumber+ numberOfDayPrinters))
+                .setRange(String.format("%s!E%d:%s%d", title, 11 + numberOfNightPrinters+ marketsNumber + numberOfDayPrinters, getLetterOfColumnByDayNumber(numberOfDaysOfMonth), 8 + marketsNumber +11 + numberOfNightPrinters+ marketsNumber+ numberOfDayPrinters))
                 .setValues(List.of(formulaGeneralNightPrinter)));
 
         //ОБЩЕЕ НОЧЬ
@@ -524,12 +534,12 @@ public class GoogleSheetsService {
         //СТРОКА "ОБЩЕЕ ПЕЧАТЬ"
         List<Object> formulaGeneralPrinter = new ArrayList<>();
         for (int i = 1; i <= numberOfDaysOfMonth; i++) {
-            String nightCell = String.format("%s%d",getColumnLetter(i), 11 + numberOfNightPrinters+ marketsNumber + numberOfDayPrinters);
-            String dayCell = String.format("%s%d",getColumnLetter(i),  8 + marketsNumber + numberOfDayPrinters);
+            String nightCell = String.format("%s%d", getLetterOfColumnByDayNumber(i), 11 + numberOfNightPrinters+ marketsNumber + numberOfDayPrinters);
+            String dayCell = String.format("%s%d", getLetterOfColumnByDayNumber(i),  8 + marketsNumber + numberOfDayPrinters);
             formulaGeneralPrinter.add(String.format("=ЕСЛИ(И(REGEXMATCH(%s; \"\\d+/\\d+\");REGEXMATCH(%s; \"\\d+/\\d+\"));СУММ(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"^(\\d+)\"));0); ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"^(\\d+)\"));0)) & \"/\" & ОКРУГЛ(СУММ(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"\\/(\\d+)\"));0); ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"\\/(\\d+)\"));0));0);ЕСЛИ(REGEXMATCH(%s; \"\\d+/\\d+\");%s;ЕСЛИ(REGEXMATCH(%s; \"\\d+/\\d+\");%s;\"\")))", dayCell, nightCell, dayCell, nightCell, dayCell, nightCell, dayCell, dayCell, nightCell, nightCell));
         }
         data.add(new ValueRange()
-                .setRange(String.format("%s!E%d:%s%d", title, 13 + numberOfNightPrinters+ marketsNumber + numberOfDayPrinters, getColumnLetter(numberOfDaysOfMonth), 8 + marketsNumber +13 + numberOfNightPrinters+ marketsNumber+ numberOfDayPrinters))
+                .setRange(String.format("%s!E%d:%s%d", title, 13 + numberOfNightPrinters+ marketsNumber + numberOfDayPrinters, getLetterOfColumnByDayNumber(numberOfDaysOfMonth), 8 + marketsNumber +13 + numberOfNightPrinters+ marketsNumber+ numberOfDayPrinters))
                 .setValues(List.of(formulaGeneralPrinter)));
 
         //ЯЧЕЙКА "ОБЩЕЕ ПЕЧАТЬ"
@@ -540,16 +550,20 @@ public class GoogleSheetsService {
                 .setValues(List.of(List.of(String.format("=ЕСЛИ(СЧЁТЗ(%s;%s)=0; \"\";СУММ(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"^(\\d+)\"));0); ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"^(\\d+)\"));0)) & \"/\" & ОКРУГЛ(СУММ(ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"\\/(\\d+)\"));0); ЕСЛИОШИБКА(ЗНАЧЕН(REGEXEXTRACT(%s; \"\\/(\\d+)\"));0));0))",dayCell,nightCell,dayCell,nightCell,dayCell,nightCell)))));
 
         //ЯЧЕЙКА "СРЕДНЕЕ ПЕЧАТЬ"
-        String rangeAverage = String.format("E%d:%s%d", 13 + marketsNumber + numberOfDayPrinters+numberOfNightPrinters, getColumnLetter(numberOfDaysOfMonth), 13 + marketsNumber + numberOfDayPrinters+numberOfNightPrinters);
+        String rangeAverage = String.format("E%d:%s%d", 13 + marketsNumber + numberOfDayPrinters+numberOfNightPrinters, getLetterOfColumnByDayNumber(numberOfDaysOfMonth), 13 + marketsNumber + numberOfDayPrinters+numberOfNightPrinters);
         data.add(new ValueRange()
                 .setRange(String.format("%s!D%d", title, 13 + numberOfNightPrinters+ marketsNumber + numberOfDayPrinters))
                 .setValues(List.of(List.of(String.format("=ЕСЛИОШИБКА(ОКРУГЛ(СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(REGEXEXTRACT(%s; \"^(\\d+)\")*1;0)))/ARRAYFORMULA(СУММ(ЕСЛИ(ДЛСТР(СЖПРОБЕЛЫ(%s)) > 0; 1; 0)));0)&\"/\"&ОКРУГЛ(СУММ(ARRAYFORMULA(ЕСЛИОШИБКА(REGEXEXTRACT(%s;\"\\/(\\d+)\")*1;0)))/ARRAYFORMULA(СУММ(ЕСЛИ(ДЛСТР(СЖПРОБЕЛЫ(%s)) > 0; 1; 0)));0);\"0/0\")", rangeAverage, rangeAverage, rangeAverage, rangeAverage)))));
 
-        //ЗАПРОС НА ПАКЕТНОЕ ОБНОВЛЕНИЕ ДАННЫХ ТАБЛИЦЫ
         batchUpdateValues(data, sheetId);
 
     }
 
+    /**
+     * Выполняет запрос на разовое пакетное обновление листа.
+     * @param data данные для обновления
+     * @param sheetId id листа
+     */
     private void batchUpdateValues(List<ValueRange> data, SheetId sheetId) {
         try {
             BatchUpdateValuesRequest batchRequest = new BatchUpdateValuesRequest()
@@ -563,8 +577,17 @@ public class GoogleSheetsService {
         }
     }
 
-    private Request createDimensionUpdateRequest(int sheetId, String inputType, int width, int start, int end) {
-        DimensionProperties properties = new DimensionProperties().setPixelSize(width);
+    /**
+     * Собирает запрос на изменение размеров строк и/или столбцов листа
+     * @param sheetId id листа
+     * @param inputType тип поля (ROWS/COLUMNS)
+     * @param value ширина в пикселях
+     * @param start номер строки/столбца, с которого начинается отсчет
+     * @param end номер строки/столбца, на котором отсчет заканчивается
+     * @return запрос типа Request с установленным UpdateDimensionPropertiesRequest
+     */
+    private Request createDimensionUpdateRequest(int sheetId, String inputType, int value, int start, int end) {
+        DimensionProperties properties = new DimensionProperties().setPixelSize(value);
         UpdateDimensionPropertiesRequest updateRowProperties = new UpdateDimensionPropertiesRequest()
                 .setRange(new DimensionRange()
                         .setSheetId(sheetId)
@@ -576,6 +599,16 @@ public class GoogleSheetsService {
         return new Request().setUpdateDimensionProperties(updateRowProperties);
     }
 
+    /**
+     * Собирает запрос на изменение стиля ячеек
+     * @param range диапазон ячеек
+     * @param color цвет фона
+     * @param textAlignment выравнивание текста
+     * @param fontSize размер шрифта
+     * @param setBold если true, то жирный шрифт
+     * @param borderWidth толщина линии границы
+     * @return запрос типа Request с установленным RepeatCellRequest
+     */
     private Request createCellStyleRequest(GridRange range, Color color, String textAlignment, int fontSize, boolean setBold, int borderWidth) {
         Border border = new Border().setStyle("SOLID").setWidth(borderWidth);
         Borders borders = new Borders().setTop(border).setBottom(border).setLeft(border).setRight(border);
@@ -593,6 +626,11 @@ public class GoogleSheetsService {
         return new Request().setRepeatCell(repeatCellRequest);
     }
 
+    /**
+     * Собирает запрос на изменение стиля границ ячеек
+     * @param range диапазон ячеек
+     * @return запрос типа Request с установленным UpdateBordersRequest
+     */
     private Request createCellBordersRequest(GridRange range) {
         Border border = new Border().setStyle("SOLID").setWidth(2);
         UpdateBordersRequest updateBordersRequest = new UpdateBordersRequest()
@@ -605,6 +643,11 @@ public class GoogleSheetsService {
     }
 
 
+    /**
+     * Выполняет запрос на чтение ячеек по диапазону
+     * @param range диапазон в формате "НАЗВАНИЕ_ЛИСТА!ВЕРХНЯЯ_ЛЕВАЯ_ЯЧЕЙКА:НИЖНЯЯ_ПРАВАЯ_ЯЧЕЙКА"
+     * @return список листов значений типа Object
+     */
     private List<List<Object>> readValues(String range) {
         ValueRange response;
         try {
@@ -618,11 +661,21 @@ public class GoogleSheetsService {
         return response.getValues();
     }
 
+    /**
+     * Формирует заголовок листа
+     * @param date дата, по которой будет извлечен месяц и год
+     * @return заголовок в формате "Статистика KPI за МЕСЯЦ ГОД"
+     */
     public String getHeaderTitle(LocalDate date) {
         String month = Months.valueOf(date.getMonth().toString()).getTranslation();
         return String.format("Статистика KPI за %s %d", month, date.getYear());
     }
 
+    /**
+     * Преобразует HEX код цвета в объект Color
+     * @param hex HEX код цвета
+     * @return цвет типа com.google.api.services.sheets.v4.model.Color
+     */
     private Color getColorByHEX(String hex) {
         int red = Integer.parseInt(hex.substring(1, 3), 16);
         int green = Integer.parseInt(hex.substring(3, 5), 16);
@@ -630,6 +683,10 @@ public class GoogleSheetsService {
         return new Color().setRed(red / 255f).setGreen(green / 255f).setBlue(blue / 255f);
     }
 
+    /**
+     * Обновляет список заголовков листа (названия магазинов, имена дневных печатников, имена ночных печатников).
+     * Список типа HashMap, ключ: номер строки, значение: название.
+     */
     private void updateLabelList() {
         List<Employee> dayPrintersList = employeeService.getListOfDayPrinters();
         List<Employee> nightPrintersList = employeeService.getListOfNightPrinters();
@@ -673,14 +730,18 @@ public class GoogleSheetsService {
             labelList.put(nightKey, employee.getFio());
             nightKey++;
         }
-
     }
 
+    /**
+     * Формирует и выполняет запрос на обновление статистики сборки за день.
+     * @param sheetId id листа
+     * @param statistic статистика сборки типа PackerStatistic
+     */
     public void addPackerStatistic(SheetId sheetId, PackerStatistic statistic) {
         updateLabelList();
         List<ValueRange> data = new ArrayList<>();
         for (Map.Entry<Integer, String> entry : labelList.entrySet()) {
-            ValueRange vr = new ValueRange().setRange(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), entry.getKey()));
+            ValueRange vr = new ValueRange().setRange(String.format("%s!%s%d", sheetId.getTitle(), getLetterOfColumnByDayNumber(statistic.getDate()), entry.getKey()));
             if (entry.getValue().equals("WB MHC")) {
                 data.add(vr.setValues(List.of(List.of(statistic.getWb_mhc()))));
             }
@@ -704,26 +765,32 @@ public class GoogleSheetsService {
             }
         }
         data.add(new ValueRange()
-                .setRange(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), 5 + marketsNumber))
-                .setValues(List.of(List.of(String.format("=СУММ(%s5:%s%d)", getColumnLetter(statistic.getDate()), getColumnLetter(statistic.getDate()), 4 + marketsNumber)))));
+                .setRange(String.format("%s!%s%d", sheetId.getTitle(), getLetterOfColumnByDayNumber(statistic.getDate()), 5 + marketsNumber))
+                .setValues(List.of(List.of(String.format("=СУММ(%s5:%s%d)", getLetterOfColumnByDayNumber(statistic.getDate()), getLetterOfColumnByDayNumber(statistic.getDate()), 4 + marketsNumber)))));
 
         batchUpdateValues(data, sheetId);
         log.info(String.format("БЫЛА ДОБАВЛЕНА СТАТИСТИКА СБОРЩИКА: %s", statistic));
     }
 
+    /**
+     * Формирует и выполняет запрос на обновление статистики печатника за день. Дополнительно проверяет, есть ли печатник в таблице. В случае отсутствия - выполняет полное обновление листа fullUpdateTable(sheetId).
+     * @param sheetId id листа
+     * @param statistic статистика печатника типа PrinterStatistic
+     */
     public void addPrinterStatistic(SheetId sheetId, PrinterStatistic statistic) {
         updateLabelList();
         boolean isEmployeeInTable = false;
+        // ЧИТАЕМ СПИСОК СУЩЕСТВУЮЩИХ ПЕЧАТНИКОВ
         List<List<Object>> values = readValues(String.format("%s!B1:B%d", sheetId.getTitle(), 20 + marketsNumber + numberOfDayPrinters + numberOfNightPrinters));
         for (List<Object> value : values) {
-            if (!value.isEmpty()) {
-                if (value.getFirst().equals(statistic.getFio())) {
+            if (!value.isEmpty()&&value.getFirst().equals(statistic.getFio())) {
+                    //ПЕЧАТНИК ЕСТЬ В ТАБЛИЦЕ
                     isEmployeeInTable = true;
                     try {
                         List<ValueRange> data = new ArrayList<>();
                         data.add(
                                 new ValueRange()
-                                        .setRange(String.format("%s!%s%d", sheetId.getTitle(), getColumnLetter(statistic.getDate()), values.indexOf(value) + 1))
+                                        .setRange(String.format("%s!%s%d", sheetId.getTitle(), getLetterOfColumnByDayNumber(statistic.getDate()), values.indexOf(value) + 1))
                                         .setValues(List.of(List.of(String.format("%s/%s", statistic.getPrints_num(), statistic.getDefects_num())))));
                         BatchUpdateValuesRequest batchRequest = new BatchUpdateValuesRequest()
                                 .setValueInputOption("USER_ENTERED")
@@ -734,9 +801,8 @@ public class GoogleSheetsService {
                     } catch (IOException e) {
                         log.error(String.format("НЕ УДАЛОСЬ ВЫПОЛНИТЬ ОБНОВЛЕНИЕ ОСНОВНЫХ ТЕКСТОВЫХ ПОЛЕЙ ТАБЛИЦЫ '%s' ПО ПРИЧИНЕ: %s", sheetId.getTitle(), e.getMessage()));
                     }
-                    log.info(String.format("БЫЛА ДОБАВЛЕНА СТАТИСТИКА ПЕЧАТНИКА В ЯЧЕЙКУ %s %s - %s", String.format("%s%d", getColumnLetter(statistic.getDate()), values.indexOf(value) + 1), statistic.getFio(), statistic));
+                    log.info(String.format("БЫЛА ДОБАВЛЕНА СТАТИСТИКА ПЕЧАТНИКА В ЯЧЕЙКУ %s %s - %s", String.format("%s%d", getLetterOfColumnByDayNumber(statistic.getDate()), values.indexOf(value) + 1), statistic.getFio(), statistic));
                     break;
-                }
             }
         }
         if (!isEmployeeInTable) {
@@ -744,15 +810,20 @@ public class GoogleSheetsService {
             fullUpdateTable(sheetId);
         }
 
-        for (Map.Entry<Integer, String> entry : labelList.entrySet()) {
+        /*for (Map.Entry<Integer, String> entry : labelList.entrySet()) {
             if (entry.getValue().equals(statistic.getFio())) {
-
                 break;
             }
-        }
+        }*/
     }
 
-    private String getColumnLetter(Object date) {
+    /**
+     * Извлекает из входящей даты день и на его основе возвращает букву колонки. Если буква не найдена, бросает IllegalStateException
+     * @param date дата (может быть String или Integer)
+     * @return букву столбца
+
+     */
+    private String getLetterOfColumnByDayNumber(Object date) {
         int day = 0;
         if (date instanceof String) {
             day = Integer.parseInt(((String) date).substring(8, 10));
@@ -797,17 +868,29 @@ public class GoogleSheetsService {
     }
 
 
+    /**
+     * Выполняет полное обновление таблицы: получение всей статистики за месяц, обновление списка заголовков, обновление шаблона листа и добавление в него всей статистики.
+     * @param sheetId id листа
+     */
     public void fullUpdateTable(SheetId sheetId) {
         log.info(String.format("ВЫПОЛНЯЮ ПОЛНОЕ ОБНОВЛЕНИЕ ТАБЛИЦЫ '%s'", sheetId.getTitle()));
         List<Employee> dayPrintersList = employeeService.getListOfDayPrinters();
         List<Employee> nightPrintersList = employeeService.getListOfNightPrinters();
-        List<PackerStatistic> packerStatisticList = postgres.getAllPackerStatistics(sheetId.getTitle());
+        List<PackerStatistic> packerStatisticList = postgres.getPackerStatistics(sheetId.getTitle());
         updateLabelList();
         updateTable(sheetId);
         updateAllStatistic(sheetId, dayPrintersList, nightPrintersList, packerStatisticList);
         log.info(String.format("ТАБЛИЦА '%s' ПОЛНОСТЬЮ ОБНОВЛЕНА АКТУАЛЬНЫМИ ДАННЫМИ", sheetId.getTitle()));
     }
 
+
+    /**
+     * Обновляет всю статистику за месяц
+     * @param sheetId id листа
+     * @param dayPrintersList список дневных печатников
+     * @param nightPrintersList список ночных печатников
+     * @param packerStatisticList статистика сборки за месяц
+     */
     private void updateAllStatistic(SheetId sheetId, List<Employee> dayPrintersList, List<Employee> nightPrintersList, List<PackerStatistic> packerStatisticList) {
         if (dayPrintersList != null) {
             updatePrinterStatistic(sheetId, dayPrintersList);
@@ -820,12 +903,22 @@ public class GoogleSheetsService {
         }
     }
 
+    /**
+     * Обновляет статистику сборки за месяц
+     * @param sheetId id листа
+     * @param packerStatisticList статистика сборки за месяц
+     */
     private void updatePackerStatistic(SheetId sheetId, List<PackerStatistic> packerStatisticList) {
         for (PackerStatistic packerStatistic : packerStatisticList) {
             addPackerStatistic(sheetId, packerStatistic);
         }
     }
 
+    /**
+     * Обновляет статистику печати за месяц
+     * @param sheetId id листа
+     * @param printersList список печатников
+     */
     private void updatePrinterStatistic(SheetId sheetId, List<Employee> printersList) {
         List<ValueRange> data = new ArrayList<>();
         Object[] statistic = new Object[numberOfDaysOfMonth];
@@ -842,7 +935,7 @@ public class GoogleSheetsService {
 
                         }
                     }
-                    vr.setRange(String.format("%s!E%d:%s%d", sheetId.getTitle(), entry.getKey(), getColumnLetter(numberOfDaysOfMonth), entry.getKey()));
+                    vr.setRange(String.format("%s!E%d:%s%d", sheetId.getTitle(), entry.getKey(), getLetterOfColumnByDayNumber(numberOfDaysOfMonth), entry.getKey()));
                     vr.setValues(List.of(Arrays.stream(statistic).toList()));
                 }
             }

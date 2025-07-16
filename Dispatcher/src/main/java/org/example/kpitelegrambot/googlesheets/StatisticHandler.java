@@ -23,7 +23,7 @@ public class StatisticHandler {
 
     public void processPrinterStatistic(PrinterStatistic printerStatistic) {
         String sheetName = googleSheetsService.getHeaderTitle(dateService.parseStringToLocalDate(printerStatistic.getDate(), "yyyy-MM-dd"));
-        SheetId sheetId = sheetIdService.findByTitle(sheetName);
+        SheetId sheetId = sheetIdService.findSheetIdByTitle(sheetName);
         log.info(String.format("ОБРАБАТЫВАЕТСЯ ЗАПРОС НА ВСТАВКУ СТАТИСТИКИ ПЕЧАТНИКА %s в таблицу '%s'", printerStatistic.getFio(), sheetName));
         if (sheetId != null) {
             googleSheetsService.addPrinterStatistic(sheetId, printerStatistic);
@@ -36,7 +36,7 @@ public class StatisticHandler {
 
     public void processPackerStatistic(PackerStatistic statistic) {
         String sheetName = googleSheetsService.getHeaderTitle(dateService.parseStringToLocalDate(statistic.getDate(), "yyyy-MM-dd"));
-        SheetId sheetId = sheetIdService.findByTitle(sheetName);
+        SheetId sheetId = sheetIdService.findSheetIdByTitle(sheetName);
         log.info(String.format("ОБРАБАТЫВАЕТСЯ ЗАПРОС НА ВСТАВКУ СТАТИСТИКИ СБОРЩИКА В ТАБЛИЦУ '%s' В ДАТУ %s", sheetName, statistic.getDate()));
         if (sheetId != null) {
             googleSheetsService.addPackerStatistic(sheetId, statistic);
@@ -49,7 +49,7 @@ public class StatisticHandler {
 
     public void processUpdateTable() {
         String sheetName = googleSheetsService.getHeaderTitle(LocalDate.now());
-        SheetId sheetId = sheetIdService.findByTitle(sheetName);
+        SheetId sheetId = sheetIdService.findSheetIdByTitle(sheetName);
         if (sheetId != null) {
             googleSheetsService.fullUpdateTable(sheetId);
         } else {

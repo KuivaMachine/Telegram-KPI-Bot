@@ -1,6 +1,7 @@
 package org.example.kpitelegrambot.bot.handlers;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.example.kpitelegrambot.bot.TelegramBot;
 import org.example.kpitelegrambot.bot.keyboards.InlineKeyboardFactory;
 import org.example.kpitelegrambot.bot.keyboards.ReplyKeyboardFactory;
@@ -16,6 +17,9 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
+import java.util.concurrent.CompletableFuture;
+
+@Log4j2
 @Component
 @RequiredArgsConstructor
 public class PrinterHandler implements JobHandler {
@@ -92,7 +96,11 @@ public class PrinterHandler implements JobHandler {
     private SendMessage deleteLastRecord(Employee currentEmployee, SendMessage sendMessage) {
         if (postgres.deleteLastPrinterRecord(currentEmployee)) {
             sendMessage.setText(AnswersList.DELETE_COMPLETE.getText());
-            statisticHandler.processUpdateTable();
+            CompletableFuture.runAsync(statisticHandler::processUpdateTable)
+                    .exceptionally(exception->{
+                        log.error("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ОБНОВЛЕНИЯ ТАБЛИЦЫ - {}", exception.getMessage());
+                        return null;
+                    });
         } else {
             sendMessage.setText(AnswersList.DELETE_UNCOMPLETED.getText());
         }
@@ -183,29 +191,6 @@ public class PrinterHandler implements JobHandler {
         //ОТПРАВИТЬ СЛЕДУЮЩЕЕ СООБЩЕНИЕ И КЛАВИАТУРУ С ОТМЕНОЙ
         sendMessage.setText(AnswersList.PRINTS_NUM_REQUEST.getText());
         sendMessage.setReplyMarkup(ReplyKeyboardFactory.getCancelKeyboard());
-      /*  //УСТАНОВИТЬ ТАЙМЕР НА 1 ЧАС, ЧТОБЫ ОТМЕНИТЬ ДОБАВЛЕНИЕ, ЕСЛИ В ТЕЧЕНИИ ЧАСА НИЧЕГО НЕ ПРОИСХОДИТ
-        if (timer != null && timer.purge() > 0) { // Проверяем, был ли уже создан таймер
-            stopTimer(); // Если да, то останавливаем его
-        }
-        timer = new Timer();
-        TimerTask task = new TimerTask() {
-            @Override
-            public void run() {
-                tgbot.sendAnswer(cancelAddingStatistic(sendMessage, currentEmployee)); // Вызываем метод с аргументами
-                timer.cancel(); // Останавливаем таймер
-            }
-        };
-        timer.schedule(task, 60000); // Запускаем задачу через 1 час (3600000 мс)
-        log.info("ТАЙМЕР ЗАПУЩЕН НА 1 МИН");*/
         return sendMessage;
     }
-
-   /* private void stopTimer() {
-        if (timer != null) {
-            timer.cancel(); // Останавливаем таймер
-            timer.purge(); // Очищаем все запланированные задачи
-            timer = null; // Сбрасываем ссылку на таймер
-        }
-    }*/
-
 }

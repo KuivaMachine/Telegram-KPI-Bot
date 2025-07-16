@@ -19,6 +19,8 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
+import java.util.concurrent.CompletableFuture;
+
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -38,7 +40,7 @@ public class CallbackQueryHandler implements Handler {
         Employee currentEmployee = employeeService.getEmployeeByChatId(chatId);
 
         sendMessage.setChatId(chatId);
-        sendMessage.setText("Эта команда сейчас неактивна) Если нужна помощь - попробуйте <b>/help</b>");
+        sendMessage.setText(AnswersList.CALLBACK_INVALID_COMMAND.getText());
         sendMessage.setParseMode("HTML");
 
         if (currentEmployee.getStatus().equals(EmployeeStatus.WAITING_JOB)) {
@@ -97,7 +99,11 @@ public class CallbackQueryHandler implements Handler {
             currentEmployee.setStatus(EmployeeStatus.SAVED);
             employeeService.save(currentEmployee);
             sendMessage.setText(String.format("Я все записал!\n%s", nicePhrase));
-            statisticHandler.processPrinterStatistic(addedStat);
+            CompletableFuture.runAsync(()->statisticHandler.processPrinterStatistic(addedStat))
+                    .exceptionally(exception->{
+                        log.error("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ДОБАВЛЕНИЯ СТАТИСТИКИ ПЕЧАТНИКА В GOOGLE ТАБЛИЦУ - {}", exception.getMessage());
+                        return null;
+                    });
         }else{
             sendMessage.setText("У меня не очень получилось записать :(\nМожет, попробовать еще раз?");
         }
@@ -110,7 +116,11 @@ public class CallbackQueryHandler implements Handler {
         currentEmployee.setJob(EmployeePost.PRINTER);
         currentEmployee.setStatus(EmployeeStatus.SAVED);
         employeeService.save(currentEmployee);
-        statisticHandler.processUpdateTable();
+        CompletableFuture.runAsync(statisticHandler::processUpdateTable)
+                .exceptionally(exception->{
+                    log.error("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ОБНОВЛЕНИЯ ТАБЛИЦЫ GOOGLE ПРИ ДОБАВЛЕНИИ НОВОГО ПЕЧАТНИКА- {}", exception.getMessage());
+                    return null;
+                });
         sendMessage.setText("""
                 Отлично 👍 Чтобы записать статистику,\s
                 нажмите «Добавить статистику»
@@ -119,11 +129,15 @@ public class CallbackQueryHandler implements Handler {
         return sendMessage;
     }
 
-    private SendMessage  addNewPacker(SendMessage sendMessage, Employee currentEmployee) {
+    private SendMessage addNewPacker(SendMessage sendMessage, Employee currentEmployee) {
         currentEmployee.setJob(EmployeePost.PACKER);
         currentEmployee.setStatus(EmployeeStatus.SAVED);
         employeeService.save(currentEmployee);
-        statisticHandler.processUpdateTable();
+        CompletableFuture.runAsync(statisticHandler::processUpdateTable)
+                .exceptionally(exception->{
+                    log.error("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ОБНОВЛЕНИЯ ТАБЛИЦЫ GOOGLE ПРИ ДОБАВЛЕНИИ НОВОГО СБОРЩИКА - {}", exception.getMessage());
+                    return null;
+                });
         sendMessage.setText("""
                 Отлично 👍 Чтобы записать статистику,\s
                 нажмите «Добавить новую статистику»

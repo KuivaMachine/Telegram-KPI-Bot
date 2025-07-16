@@ -1,6 +1,7 @@
 package org.example.kpitelegrambot.bot.handlers;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.example.kpitelegrambot.bot.TelegramBot;
 import org.example.kpitelegrambot.bot.configuration.SettingsManager;
 import org.example.kpitelegrambot.bot.keyboards.InlineKeyboardFactory;
@@ -15,7 +16,9 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 
+import java.util.concurrent.CompletableFuture;
 
+@Log4j2
 @Component
 @RequiredArgsConstructor
 public class UpdateHandler implements Handler {
@@ -40,38 +43,44 @@ public class UpdateHandler implements Handler {
         employee = employeeService.getEmployeeByChatId(chatId);
         EmployeePost job = employee.getJob();
 
-        if (text.equals("/forget_me")) {
-            employeeService.deleteEmployeeByChatId(chatId);
-            return forgetEmployeeProcess(sendMessage);
-        }
-        if (text.equals("/enable_admin_notification")) {
-            settingsManager.setNotificationEnabled(true);
-            sendMessage.setText("Включил ежедневное оповещение");
-            return sendMessage;
-        }
-        if (text.equals("/disable_admin_notification")) {
-            settingsManager.setNotificationEnabled(false);
-            sendMessage.setText("Выключил ежедневное оповещение");
-            return sendMessage;
-        }
-        if (text.equals("/kuiva_machine")) {
-           sendMessage.setText(AnswersList.ADMIN_COMMANDS.getText());
-           sendMessage.setParseMode("HTML");
-            return sendMessage;
-        }
-        if (text.equals("/update_table")) {
-            sendMessage.setText("Обновляю таблицу KPI за текущий месяц");
-            statisticHandler.processUpdateTable();
-            return sendMessage;
-        }
-        if (text.equals("/help")) {
-            switch (job) {
-                case PRINTER -> sendMessage.setText(AnswersList.HELP_MESSAGE_PRINTER.getText());
-                case PACKER -> sendMessage.setText(AnswersList.HELP_MESSAGE_PACKER.getText());
-                case UNKNOWN -> sendMessage.setText(AnswersList.HELP_MESSAGE_UNKNOWN.getText());
+        switch (text) {
+            case "/forget_me" -> {
+                employeeService.deleteEmployeeByChatId(chatId);
+                return forgetEmployeeProcess(sendMessage);
             }
-            sendMessage.setParseMode("HTML");
-            return sendMessage;
+            case "/enable_admin_notification" -> {
+                settingsManager.setNotificationEnabled(true);
+                sendMessage.setText("Включил ежедневное оповещение");
+                return sendMessage;
+            }
+            case "/disable_admin_notification" -> {
+                settingsManager.setNotificationEnabled(false);
+                sendMessage.setText("Выключил ежедневное оповещение");
+                return sendMessage;
+            }
+            case "/kuiva_machine" -> {
+                sendMessage.setText(AnswersList.ADMIN_COMMANDS.getText());
+                sendMessage.setParseMode("HTML");
+                return sendMessage;
+            }
+            case "/update_table" -> {
+                sendMessage.setText("Обновляю таблицу KPI за текущий месяц");
+                CompletableFuture.runAsync(statisticHandler::processUpdateTable)
+                        .exceptionally(exception->{
+                            log.error("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ОБНОВЛЕНИЯ ТАБЛИЦЫ - {}", exception.getMessage());
+                            return null;
+                        });
+                return sendMessage;
+            }
+            case "/help" -> {
+                switch (job) {
+                    case PRINTER -> sendMessage.setText(AnswersList.HELP_MESSAGE_PRINTER.getText());
+                    case PACKER -> sendMessage.setText(AnswersList.HELP_MESSAGE_PACKER.getText());
+                    case UNKNOWN -> sendMessage.setText(AnswersList.HELP_MESSAGE_UNKNOWN.getText());
+                }
+                sendMessage.setParseMode("HTML");
+                return sendMessage;
+            }
         }
 
         return (switch (job) {
@@ -154,6 +163,7 @@ public class UpdateHandler implements Handler {
         employeeService.save(employee);
         sendMessage.setText(AnswersList.NEW_USER_MESSAGE.getText());
         sendMessage.setReplyMarkup(new ReplyKeyboardRemove(true));
+        log.info("ЗАПУЩЕН ПРОЦЕСС ДОБАВЛЕНИЯ СОТРУДНИКА, username: '{}', chat_id: {}", employee.getUsername(), employee.getChatId());
         return sendMessage;
     }
 

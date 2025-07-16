@@ -27,7 +27,7 @@ public class SheetIdServiceImpl implements SheetIdService {
     }
 
     @Override
-    public SheetId findByTitle(String title) {
+    public SheetId findSheetIdByTitle(String title) {
         Optional<SheetId> sheetId = sheetIdRepository.findByTitle(title);
         if (sheetId.isPresent()) {
             return sheetId.get();

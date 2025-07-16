@@ -2,6 +2,7 @@
 .gradle
 build/
 .env
+resources/credential.json
 admin.properties
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
