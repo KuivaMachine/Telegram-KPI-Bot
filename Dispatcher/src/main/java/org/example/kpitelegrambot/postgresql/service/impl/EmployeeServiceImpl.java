@@ -9,10 +9,9 @@ import org.example.kpitelegrambot.postgresql.data.EmployeeStatus;
 import org.example.kpitelegrambot.postgresql.entity.Employee;
 import org.example.kpitelegrambot.postgresql.entity.repository.EmployeeRepository;
 import org.example.kpitelegrambot.postgresql.service.EmployeeService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,7 +31,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public Employee getEmployeeByChatId(long id) {
-        return employeeRepository.findById(id).orElse(new Employee(id,null,null, EmployeeStatus.UNKNOWN_USER, EmployeePost.UNKNOWN, DayNight.UNKNOWN));
+        return employeeRepository.findById(id).orElse(new Employee(id, null, null, EmployeeStatus.UNKNOWN_USER, EmployeePost.UNKNOWN, DayNight.UNKNOWN, null));
     }
 
     @Override
@@ -41,24 +40,38 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public List<Employee> getListOfDayPrinters() {
-        List<Employee> dayEmployees = new ArrayList<>();
+    public List<Employee> getListOfPrinters(DayNight mode) {
+        List<Employee> employees = new ArrayList<>();
         for (Employee employee : employeeRepository.findAll()) {
-                if(employee.getWorkTime()== DayNight.DAY){
-                    dayEmployees.add(employee);
+            if (employee.getWorkTime() == mode && checkFired(employee.getFired())) {
+                employees.add(employee);
             }
         }
-        return dayEmployees;
+        return employees;
     }
 
     @Override
-    public List<Employee> getListOfNightPrinters() {
-        List<Employee> nightEmployees = new ArrayList<>();
-        for (Employee employee : employeeRepository.findAll()) {
-            if(employee.getWorkTime()== DayNight.NIGHT){
-                nightEmployees.add(employee);
-            }
+    public List<Employee> getEmployees() {
+        return employeeRepository.findAll().stream().filter((employee -> employee.getFired() == null)).toList();
+    }
+
+    @Override
+    public void dismissEmployeeByUsername(String employeeName, LocalDate date) {
+        employeeRepository.dismissEmployeeByUsername(employeeName, date);
+    }
+
+    /**
+     * Сравнивает дату увольнения с текущей датой.
+     *
+     * @param fired дата увольнения
+     * @return true, если даты увольнения нет, или она входит в месяц этого года.
+     */
+    private boolean checkFired(LocalDate fired) {
+        if (fired == null) {
+            return true;
         }
-        return nightEmployees;
+        LocalDate today = LocalDate.now();
+        return fired.getMonth() == today.getMonth()
+                && fired.getYear() == today.getYear();
     }
 }

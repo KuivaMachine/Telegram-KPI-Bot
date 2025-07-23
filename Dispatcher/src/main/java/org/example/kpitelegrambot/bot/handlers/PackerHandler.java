@@ -140,9 +140,11 @@ public class PackerHandler implements JobHandler {
     }
 
     private SendMessage deleteLastRecord(Employee currentEmployee, SendMessage sendMessage) {
+        String lastAddedPackerRecord = postgres.getLastAddedPackerRecordToString();
         if (postgres.deleteLastPackerRecord()) {
             sendMessage.setText(AnswersList.DELETE_COMPLETE.getText());
             CompletableFuture.runAsync(statisticHandler::processUpdateTable)
+                    .thenRun(()-> log.info("ЗАПИСЬ СБОРКИ {} УСПЕШНО УДАЛЕНА", lastAddedPackerRecord))
                     .exceptionally(exception->{
                         log.error("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ОБНОВЛЕНИЯ ТАБЛИЦЫ - {}", exception.getMessage());
                         return null;

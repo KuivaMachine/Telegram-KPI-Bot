@@ -5,6 +5,7 @@ import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.*;
 import lombok.extern.log4j.Log4j2;
 import org.example.kpitelegrambot.postgresql.DAO.PostgreSQLController;
+import org.example.kpitelegrambot.postgresql.data.DayNight;
 import org.example.kpitelegrambot.postgresql.data.Months;
 import org.example.kpitelegrambot.postgresql.entity.Employee;
 import org.example.kpitelegrambot.postgresql.entity.PackerStatistic;
@@ -87,7 +88,6 @@ public class GoogleSheetsService {
         //ЕСЛИ ТАБЛИЦА С ТАКИМ НАЗВАНИЕМ УЖЕ ЕСТЬ
         int currentSheetId = findSheetIdByTitle(sheetTitle);
         if (currentSheetId != -1) {
-            log.info(String.format("ТАБЛИЦА С НАЗВАНИЕМ '%s' УЖЕ ЕСТЬ. СОХРАНЯЮ ЕЕ ID", sheetTitle));
             sheetIdService.saveSheetId(new SheetId(currentSheetId, sheetTitle));
             return new SheetId(currentSheetId, sheetTitle);
         }
@@ -688,8 +688,8 @@ public class GoogleSheetsService {
      * Список типа HashMap, ключ: номер строки, значение: название.
      */
     private void updateLabelList() {
-        List<Employee> dayPrintersList = employeeService.getListOfDayPrinters();
-        List<Employee> nightPrintersList = employeeService.getListOfNightPrinters();
+        List<Employee> dayPrintersList = employeeService.getListOfPrinters(DayNight.DAY);
+        List<Employee> nightPrintersList = employeeService.getListOfPrinters(DayNight.NIGHT);
         this.numberOfDayPrinters = dayPrintersList.size();
         this.numberOfNightPrinters = nightPrintersList.size();
 
@@ -809,12 +809,6 @@ public class GoogleSheetsService {
             log.info(String.format("ПЕЧАТНИКА %s В ТАБЛИЦЕ '%s' НЕТ", statistic.getFio(), sheetId.getTitle()));
             fullUpdateTable(sheetId);
         }
-
-        /*for (Map.Entry<Integer, String> entry : labelList.entrySet()) {
-            if (entry.getValue().equals(statistic.getFio())) {
-                break;
-            }
-        }*/
     }
 
     /**
@@ -873,14 +867,12 @@ public class GoogleSheetsService {
      * @param sheetId id листа
      */
     public void fullUpdateTable(SheetId sheetId) {
-        log.info(String.format("ВЫПОЛНЯЮ ПОЛНОЕ ОБНОВЛЕНИЕ ТАБЛИЦЫ '%s'", sheetId.getTitle()));
-        List<Employee> dayPrintersList = employeeService.getListOfDayPrinters();
-        List<Employee> nightPrintersList = employeeService.getListOfNightPrinters();
+        List<Employee> dayPrintersList = employeeService.getListOfPrinters(DayNight.DAY);
+        List<Employee> nightPrintersList = employeeService.getListOfPrinters(DayNight.NIGHT);
         List<PackerStatistic> packerStatisticList = postgres.getPackerStatistics(sheetId.getTitle());
         updateLabelList();
         updateTable(sheetId);
         updateAllStatistic(sheetId, dayPrintersList, nightPrintersList, packerStatisticList);
-        log.info(String.format("ТАБЛИЦА '%s' ПОЛНОСТЬЮ ОБНОВЛЕНА АКТУАЛЬНЫМИ ДАННЫМИ", sheetId.getTitle()));
     }
 
 

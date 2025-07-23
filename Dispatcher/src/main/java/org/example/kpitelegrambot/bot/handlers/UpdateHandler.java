@@ -16,6 +16,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Log4j2
@@ -44,6 +45,9 @@ public class UpdateHandler implements Handler {
         EmployeePost job = employee.getJob();
 
         switch (text) {
+            case "/delete_employee"->{
+                return deleteEmployeeProcess(sendMessage);
+            }
             case "/forget_me" -> {
                 employeeService.deleteEmployeeByChatId(chatId);
                 return forgetEmployeeProcess(sendMessage);
@@ -82,6 +86,11 @@ public class UpdateHandler implements Handler {
                 return sendMessage;
             }
         }
+        // ЕСЛИ В ГРАФЕ "УВОЛЕН" ЕСТЬ ДАТА
+        if (employee.getFired()!=null){
+            sendMessage.setText("Извините, после увольнения доступ к функционалу запрещен \uD83D\uDE14");
+            return sendMessage;
+        }
 
         return (switch (job) {
             case PACKER -> packerHandler.process(update, employee, sendMessage);
@@ -89,6 +98,18 @@ public class UpdateHandler implements Handler {
             case UNKNOWN -> registrationProcess(sendMessage, employee, update);
         });
 
+    }
+
+    private SendMessage deleteEmployeeProcess(SendMessage sendMessage) {
+
+        List<Employee> employees = employeeService.getEmployees();
+        if (!employees.isEmpty()) {
+            sendMessage.setText("Выберите работника для удаления \uD83D\uDC47");
+            sendMessage.setReplyMarkup(InlineKeyboardFactory.getEmployeeListKeyboard(employees));
+        }else{
+            sendMessage.setText("Список активных сотрудников пуст");
+        }
+        return sendMessage;
     }
 
     private SendMessage forgetEmployeeProcess(SendMessage sendMessage) {
@@ -100,7 +121,6 @@ public class UpdateHandler implements Handler {
 
 
     private SendMessage registrationProcess(SendMessage sendMessage, Employee employee, Update update) {
-        Long chatId = update.getMessage().getChatId();
         String text = update.getMessage().getText();
         if (employee.getStatus().equals(EmployeeStatus.UNKNOWN_USER)) {
             return newUserProcessing(sendMessage, employee, update);
@@ -109,12 +129,10 @@ public class UpdateHandler implements Handler {
             return fillFioProcessing(sendMessage, employee, text);
         }
         if (employee.getStatus().equals(EmployeeStatus.WAITING_JOB)) {
-            telegramBot.deleteLastMessage(chatId, update.getMessage().getMessageId());
             sendMessage.setText(AnswersList.INVALID_JOB.getText());
             sendMessage.setReplyMarkup(InlineKeyboardFactory.getJobChoiceKeyboard());
         }
         if (employee.getStatus().equals(EmployeeStatus.WAITING_WORKTIME)) {
-            telegramBot.deleteLastMessage(chatId, update.getMessage().getMessageId());
             sendMessage.setText(AnswersList.WORKTIME_CHOICE.getText());
             sendMessage.setReplyMarkup(InlineKeyboardFactory.getDayNightKeyboard());
         }

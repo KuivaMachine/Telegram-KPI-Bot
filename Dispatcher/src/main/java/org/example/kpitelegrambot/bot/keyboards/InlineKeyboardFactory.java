@@ -2,6 +2,7 @@ package org.example.kpitelegrambot.bot.keyboards;
 
 import org.example.kpitelegrambot.data.ButtonLabels;
 import org.example.kpitelegrambot.postgresql.data.DayNight;
+import org.example.kpitelegrambot.postgresql.entity.Employee;
 import org.example.kpitelegrambot.postgresql.service.DateService;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
@@ -90,4 +91,49 @@ public class InlineKeyboardFactory {
         return inlineKeyboardMarkup;
     }
 
+    public static InlineKeyboardMarkup getEmployeeListKeyboard(List<Employee> employees) {
+
+        InlineKeyboardMarkup keyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+        for (Employee employee : employees) {
+            InlineKeyboardButton get_promo_but = new InlineKeyboardButton();
+            get_promo_but.setText(String.format("%s - %s", employee.getFio(), getJobName(employee)));
+            get_promo_but.setCallbackData(String.format("delete_employee@%s", employee.getUsername()));
+            keyboard.add(List.of(get_promo_but));
+        }
+
+        keyboardMarkup.setKeyboard(keyboard);
+        return keyboardMarkup;
+    }
+
+    private static String getJobName(Employee employee) {
+        return switch (employee.getJob()) {
+            case PACKER -> "Сборщик";
+            case PRINTER -> switch (employee.getWorkTime()) {
+                case DAY -> "Печатник, день";
+                case NIGHT -> "Печатник, ночь";
+                case UNKNOWN -> "Неизвестно";
+            };
+            case UNKNOWN -> "Неизвестно";
+        };
+
+    }
+
+    public static InlineKeyboardMarkup getYesNoDeletingChoice(String callback) {
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+
+        InlineKeyboardButton dayButton = new InlineKeyboardButton();
+        dayButton.setText("Удалить");
+        dayButton.setCallbackData("allowed_" + callback);
+        keyboard.add(List.of(dayButton));
+
+        InlineKeyboardButton nightButton = new InlineKeyboardButton();
+        nightButton.setText("Оставить");
+        nightButton.setCallbackData("not_allowed_" + callback);
+        keyboard.add(List.of(nightButton));
+
+        inlineKeyboardMarkup.setKeyboard(keyboard);
+        return inlineKeyboardMarkup;
+    }
 }

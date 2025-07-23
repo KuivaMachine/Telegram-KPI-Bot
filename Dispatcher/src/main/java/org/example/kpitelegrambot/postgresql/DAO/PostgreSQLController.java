@@ -388,7 +388,6 @@ public class PostgreSQLController {
      */
     //
     private <T> List<T> executeQuery(String query, RowMapper<T> rowMapper) {
-        log.info("ДЛЯ ОБНОВЛЕНИЯ ТАБЛИЦЫ БЫЛА СДЕЛАНА ВЫБОРКА {}", query);
         return jdbcTemplate.query(query, rowMapper);
     }
 
@@ -407,7 +406,6 @@ public class PostgreSQLController {
                     tableName, dates.getFirst(), dates.getLast());
             return executeQuery(selectStatRequest, new PrinterStatisticMapper());
         } else {
-            log.info(String.format("ТАБЛИЦЫ ПЕЧАТНИКА %s НЕ СУЩЕСТВУЕТ", chatId));
             return null;
         }
     }
@@ -426,7 +424,6 @@ public class PostgreSQLController {
                     tableName, dates.getFirst(), dates.getLast());
             return executeQuery(selectStatRequest, new PackerStatisticMapper());
         } else {
-            log.info("ТАБЛИЦЫ СБОРЩИКОВ НЕ СУЩЕСТВУЕТ");
             return null;
         }
     }

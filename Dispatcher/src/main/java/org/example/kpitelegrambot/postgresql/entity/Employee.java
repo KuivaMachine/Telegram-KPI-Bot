@@ -8,6 +8,8 @@ import org.example.kpitelegrambot.postgresql.data.DayNight;
 import org.example.kpitelegrambot.postgresql.data.EmployeePost;
 import org.example.kpitelegrambot.postgresql.data.EmployeeStatus;
 
+import java.time.LocalDate;
+
 @Getter
 @Setter
 @Entity
@@ -39,4 +41,18 @@ public class Employee {
     @Column(name = "work_time")
     DayNight workTime;
 
+    @Column(name = "fired")
+    LocalDate fired;
+
+    @Override
+    public String toString() {
+        return "Employee{" +
+                "chatId=" + chatId +
+                ", fio='" + fio + '\'' +
+                ", username='" + username + '\'' +
+                ", status=" + status +
+                ", job=" + job +
+                ", workTime=" + workTime +
+                '}';
+    }
 }

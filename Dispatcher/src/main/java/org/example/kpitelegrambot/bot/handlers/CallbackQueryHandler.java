@@ -18,6 +18,8 @@ import org.example.kpitelegrambot.postgresql.service.EmployeeService;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+
+import java.time.LocalDate;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -44,10 +46,26 @@ public class CallbackQueryHandler implements Handler {
         String callback = update.getCallbackQuery().getData();
         SendMessage sendMessage = new SendMessage();
         Employee currentEmployee = employeeService.getEmployeeByChatId(chatId);
-        // ДОСТАЕМ CHAT_ID И CALLBACK ИЗ UPDATE, НАХОДИМ ПОЛЬЗОВАТЕЛЯ
+        // УСТАНАВЛИВАЕМ CHAT_ID, ОТВЕТ ПО УМОЛЧАНИЮ И РЕЖИМ РАЗМЕТКИ
         sendMessage.setChatId(chatId);
         sendMessage.setText(AnswersList.CALLBACK_INVALID_COMMAND.getText());
         sendMessage.setParseMode("HTML");
+
+        // ЕСЛИ ПРИШЛА КОМАНДА НА УДАЛЕНИЕ СОТРУДНИКА
+        if (callback.startsWith("delete_employee@")) {
+            return deleteEmployeeConfirmation(callback, sendMessage);
+        }
+        // ЕСЛИ ПРИШЕЛ ОТВЕТ "УДАЛИТЬ" СОТРУДНИКА
+        if (callback.startsWith("allowed_delete_employee@")) {
+            return deleteEmployee(callback, sendMessage);
+        }
+        // ЕСЛИ ПРИШЕЛ ОТВЕТ "ОСТАВИТЬ" СОТРУДНИКА
+        if (callback.startsWith("not_allowed_delete_employee@")) {
+            sendMessage.setText("Удаление отменено");
+            return sendMessage;
+        }
+
+
         // ЕСЛИ ОЖИДАЕТСЯ ВВОД ДОЛЖНОСТИ
         if (currentEmployee.getStatus().equals(EmployeeStatus.WAITING_JOB)) {
             if (callback.equals(ButtonLabels.I_AM_PACKER.getCallback())) {
@@ -76,6 +94,32 @@ public class CallbackQueryHandler implements Handler {
             }
         }
 
+        return sendMessage;
+    }
+
+    /**
+     * Добавляет выбранному сотруднику метку об увольнении в виде даты.
+     * @param callback информация о кнопке
+     * @param sendMessage сообщение
+     * @return sendMessage
+     */
+    private SendMessage deleteEmployee(String callback, SendMessage sendMessage) {
+        String username = callback.substring(24);
+        employeeService.dismissEmployeeByUsername(username, LocalDate.now());
+        log.info("СОТРУДНИК {} УВОЛЕН", username);
+        sendMessage.setText("Сотрудник уволен");
+        return sendMessage;
+    }
+
+    /**
+     * Принимает запрос на увольнение сотрудника, и возвращает запрос на подтверждение
+     * @param callback информация о кнопке
+     * @param sendMessage сообщение
+     * @return sendMessage
+     */
+    private SendMessage deleteEmployeeConfirmation(String callback, SendMessage sendMessage) {
+        sendMessage.setText("Со следующего месяца сотрудник будет удален из таблицы KPI. \nВся статистика останется в базе. \nПодтверждаете увольнение?");
+        sendMessage.setReplyMarkup(InlineKeyboardFactory.getYesNoDeletingChoice(callback));
         return sendMessage;
     }
 
@@ -150,6 +194,7 @@ public class CallbackQueryHandler implements Handler {
         currentEmployee.setJob(EmployeePost.PRINTER);
         currentEmployee.setStatus(EmployeeStatus.SAVED);
         employeeService.save(currentEmployee);
+        log.info("ДОБАВЛЕН НОВЫЙ ПЕЧАТНИК - ({})", currentEmployee);
         CompletableFuture.runAsync(statisticHandler::processUpdateTable)
                 .exceptionally(exception->{
                     log.error("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ОБНОВЛЕНИЯ ТАБЛИЦЫ GOOGLE ПРИ ДОБАВЛЕНИИ НОВОГО ПЕЧАТНИКА- {}", exception.getMessage());
@@ -173,6 +218,7 @@ public class CallbackQueryHandler implements Handler {
         currentEmployee.setJob(EmployeePost.PACKER);
         currentEmployee.setStatus(EmployeeStatus.SAVED);
         employeeService.save(currentEmployee);
+        log.info("ДОБАВЛЕН НОВЫЙ СБОРЩИК - ({})", currentEmployee);
         CompletableFuture.runAsync(statisticHandler::processUpdateTable)
                 .exceptionally(exception->{
                     log.error("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ОБНОВЛЕНИЯ ТАБЛИЦЫ GOOGLE ПРИ ДОБАВЛЕНИИ НОВОГО СБОРЩИКА - {}", exception.getMessage());
