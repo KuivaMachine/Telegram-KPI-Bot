@@ -1,18 +1,17 @@
 package org.example.kpitelegrambot.bot.handlers;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
-import org.example.kpitelegrambot.bot.TelegramBot;
 import org.example.kpitelegrambot.bot.keyboards.ReplyKeyboardFactory;
-import org.example.kpitelegrambot.data.AnswersList;
-import org.example.kpitelegrambot.data.ButtonLabels;
+import org.example.kpitelegrambot.bot.enums.AnswersList;
+import org.example.kpitelegrambot.bot.enums.ButtonLabels;
 import org.example.kpitelegrambot.googlesheets.StatisticHandler;
-import org.example.kpitelegrambot.postgresql.DAO.PostgreSQLController;
-import org.example.kpitelegrambot.postgresql.data.EmployeeStatus;
-import org.example.kpitelegrambot.postgresql.entity.Employee;
-import org.example.kpitelegrambot.postgresql.entity.PackerStatistic;
-import org.example.kpitelegrambot.postgresql.service.DateService;
-import org.example.kpitelegrambot.postgresql.service.EmployeeService;
+import org.example.kpitelegrambot.data.service.StatisticService;
+import org.example.kpitelegrambot.bot.enums.EmployeeStatus;
+import org.example.kpitelegrambot.data.entity.Employee;
+import org.example.kpitelegrambot.data.entity.PackerStatistic;
+import org.example.kpitelegrambot.data.service.DateService;
+import org.example.kpitelegrambot.data.service.EmployeeService;
+import org.example.kpitelegrambot.data.service.LogService;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -22,13 +21,14 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Обработчик событий для сборщика
  */
-@Log4j2
 @Component
 @RequiredArgsConstructor
 public class PackerHandler implements JobHandler {
     private final EmployeeService employeeService;
-    private final PostgreSQLController postgres;
+    private final StatisticService postgres;
     private final StatisticHandler statisticHandler;
+    private final LogService log;
+
 
     /**
      * Основной обработчик сообщения
@@ -144,9 +144,9 @@ public class PackerHandler implements JobHandler {
         if (postgres.deleteLastPackerRecord()) {
             sendMessage.setText(AnswersList.DELETE_COMPLETE.getText());
             CompletableFuture.runAsync(statisticHandler::processUpdateTable)
-                    .thenRun(()-> log.info("ЗАПИСЬ СБОРКИ {} УСПЕШНО УДАЛЕНА", lastAddedPackerRecord))
+                    .thenRun(()-> log.info(String.format("ЗАПИСЬ СБОРКИ %s УСПЕШНО УДАЛЕНА", lastAddedPackerRecord)))
                     .exceptionally(exception->{
-                        log.error("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ОБНОВЛЕНИЯ ТАБЛИЦЫ - {}", exception.getMessage());
+                        log.error(String.format("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ОБНОВЛЕНИЯ ТАБЛИЦЫ - %s", exception.getMessage()));
                         return null;
                     });
         } else {
@@ -200,7 +200,7 @@ public class PackerHandler implements JobHandler {
             CompletableFuture.runAsync(
                     () -> statisticHandler.processPackerStatistic(statistic)
             ).exceptionally(exception-> {
-                log.error("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ДОБАВЛЕНИЯ СТАТИСТИКИ СБОРКИ В GOOGLE ТАБЛИЦУ - {}", exception.getMessage());
+                log.error(String.format("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ДОБАВЛЕНИЯ СТАТИСТИКИ СБОРКИ В GOOGLE ТАБЛИЦУ - %s", exception.getMessage()));
                 return null;
             });
 

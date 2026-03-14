@@ -3,7 +3,6 @@
 build/
 .env
 Dispatcher/src/main/resources/credential.json
-admin.properties
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 **/src/test/**/build/

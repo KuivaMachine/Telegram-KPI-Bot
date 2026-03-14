@@ -1,16 +1,15 @@
 package org.example.kpitelegrambot.bot.handlers;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
-import org.example.kpitelegrambot.bot.TelegramBot;
 import org.example.kpitelegrambot.bot.configuration.SettingsManager;
 import org.example.kpitelegrambot.bot.keyboards.InlineKeyboardFactory;
-import org.example.kpitelegrambot.data.AnswersList;
+import org.example.kpitelegrambot.bot.enums.AnswersList;
 import org.example.kpitelegrambot.googlesheets.StatisticHandler;
-import org.example.kpitelegrambot.postgresql.data.EmployeePost;
-import org.example.kpitelegrambot.postgresql.data.EmployeeStatus;
-import org.example.kpitelegrambot.postgresql.entity.Employee;
-import org.example.kpitelegrambot.postgresql.service.EmployeeService;
+import org.example.kpitelegrambot.bot.enums.EmployeePost;
+import org.example.kpitelegrambot.bot.enums.EmployeeStatus;
+import org.example.kpitelegrambot.data.entity.Employee;
+import org.example.kpitelegrambot.data.service.EmployeeService;
+import org.example.kpitelegrambot.data.service.LogService;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -19,21 +18,18 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRem
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-@Log4j2
+
 @Component
 @RequiredArgsConstructor
 public class UpdateHandler implements Handler {
 
     private final EmployeeService employeeService;
-    Employee employee;
-    TelegramBot telegramBot;
     private final PrinterHandler printerHandler;
     private final PackerHandler packerHandler;
     private final StatisticHandler statisticHandler;
     private final SettingsManager settingsManager;
-    public void register(TelegramBot telegramBot) {
-        this.telegramBot = telegramBot;
-    }
+    private final LogService log;
+
 
     @Override
     public SendMessage process(Update update) {
@@ -41,7 +37,7 @@ public class UpdateHandler implements Handler {
         String text = update.getMessage().getText();
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
-        employee = employeeService.getEmployeeByChatId(chatId);
+        Employee employee = employeeService.getEmployeeByChatId(chatId);
         EmployeePost job = employee.getJob();
 
         switch (text) {
@@ -71,7 +67,7 @@ public class UpdateHandler implements Handler {
                 sendMessage.setText("Обновляю таблицу KPI за текущий месяц");
                 CompletableFuture.runAsync(statisticHandler::processUpdateTable)
                         .exceptionally(exception->{
-                            log.error("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ОБНОВЛЕНИЯ ТАБЛИЦЫ - {}", exception.getMessage());
+                            log.error(String.format("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ОБНОВЛЕНИЯ ТАБЛИЦЫ - %s", exception.getMessage()));
                             return null;
                         });
                 return sendMessage;
@@ -181,7 +177,7 @@ public class UpdateHandler implements Handler {
         employeeService.save(employee);
         sendMessage.setText(AnswersList.NEW_USER_MESSAGE.getText());
         sendMessage.setReplyMarkup(new ReplyKeyboardRemove(true));
-        log.info("ЗАПУЩЕН ПРОЦЕСС ДОБАВЛЕНИЯ СОТРУДНИКА, username: '{}', chat_id: {}", employee.getUsername(), employee.getChatId());
+        log.info(String.format("ЗАПУЩЕН ПРОЦЕСС ДОБАВЛЕНИЯ СОТРУДНИКА, username: '%s', chat_id: %s", employee.getUsername(), employee.getChatId()));
         return sendMessage;
     }
 

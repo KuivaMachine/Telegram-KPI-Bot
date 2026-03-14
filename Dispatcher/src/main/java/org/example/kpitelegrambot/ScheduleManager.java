@@ -1,9 +1,9 @@
 package org.example.kpitelegrambot;
 
 import lombok.RequiredArgsConstructor;
-import org.example.kpitelegrambot.bot.TelegramBot;
+import org.example.kpitelegrambot.bot.TelegramBotWebHook;
 import org.example.kpitelegrambot.bot.configuration.SettingsManager;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.example.kpitelegrambot.data.service.LogService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -13,10 +13,11 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 @RequiredArgsConstructor
 public class ScheduleManager {
     int count = 0;
-    TelegramBot bot;
+    TelegramBotWebHook bot;
     private final SettingsManager settingsManager;
+    private final LogService log;
 
-    public void init(TelegramBot bot) {
+    public void init(TelegramBotWebHook bot) {
         this.bot = bot;
     }
     /**
@@ -32,7 +33,7 @@ public class ScheduleManager {
             try {
                 bot.execute(message);
             } catch (TelegramApiException e) {
-                throw new RuntimeException(e);
+                log.error("Ошибка при отправке сообщения от runDailyTask: " + e.getMessage());
             }
         }
 

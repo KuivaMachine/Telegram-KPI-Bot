@@ -3,27 +3,29 @@ package org.example.kpitelegrambot.googlesheets;
 
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.*;
-import lombok.extern.log4j.Log4j2;
-import org.example.kpitelegrambot.postgresql.DAO.PostgreSQLController;
-import org.example.kpitelegrambot.postgresql.data.DayNight;
-import org.example.kpitelegrambot.postgresql.data.Months;
-import org.example.kpitelegrambot.postgresql.entity.Employee;
-import org.example.kpitelegrambot.postgresql.entity.PackerStatistic;
-import org.example.kpitelegrambot.postgresql.entity.PrinterStatistic;
-import org.example.kpitelegrambot.postgresql.entity.SheetId;
-import org.example.kpitelegrambot.postgresql.service.EmployeeService;
-import org.example.kpitelegrambot.postgresql.service.SheetIdService;
+import lombok.RequiredArgsConstructor;
+import org.example.kpitelegrambot.data.service.StatisticService;
+import org.example.kpitelegrambot.bot.enums.DayNight;
+import org.example.kpitelegrambot.bot.enums.Months;
+import org.example.kpitelegrambot.data.entity.Employee;
+import org.example.kpitelegrambot.data.entity.PackerStatistic;
+import org.example.kpitelegrambot.data.entity.PrinterStatistic;
+import org.example.kpitelegrambot.data.entity.SheetId;
+import org.example.kpitelegrambot.data.service.EmployeeService;
+import org.example.kpitelegrambot.data.service.LogService;
+import org.example.kpitelegrambot.data.service.SheetIdService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.*;
+
 /**
  Основной класс для создания таблицы и заполнения данными
  */
-@Log4j2
 @Component
+@RequiredArgsConstructor
 public class GoogleSheetsService {
 
     private final int marketsNumber = 7;
@@ -31,37 +33,34 @@ public class GoogleSheetsService {
     private int numberOfNightPrinters;
 
     private final EmployeeService employeeService;
+    private final LogService log;
     private final HashMap<Integer, String> labelList = new HashMap<>();
     private final Sheets sheetService;
     @Value("${google.spreadsheet_id}")
     private String SPREADSHEET_ID;
 
     private final SheetIdService sheetIdService;
-    private final PostgreSQLController postgres;
+    private final StatisticService postgres;
     private int numberOfDaysOfMonth;
 
-    public GoogleSheetsService(Sheets sheetService, EmployeeService employeeService, SheetIdService sheetIdService, PostgreSQLController postgres) {
-        this.sheetService = sheetService;
-        this.employeeService = employeeService;
-        this.sheetIdService = sheetIdService;
-        this.postgres = postgres;
-    }
+
     /**
      * Находит лист (sheet) в таблице по SPREADSHEET_ID по названию
      * @param title Имя пользователя (не может быть null)
      * @return ID листа, если найден, иначе -1
      */
-    private int findSheetIdByTitle(String title) {
+    public int findSheetIdByTitle(String title) {
         try {
             Spreadsheet spreadsheet = sheetService.spreadsheets().get(SPREADSHEET_ID).execute();
             List<Sheet> sheets = spreadsheet.getSheets();
             for (Sheet sheet : sheets) {
+                log.error(sheet.getProperties().getSheetId()+" "+sheet.getProperties().getTitle());
                 if (title.equals(sheet.getProperties().getTitle())) {
                     return sheet.getProperties().getSheetId();
                 }
             }
         } catch (IOException e) {
-            log.info("ОШИБКА В МЕТОДЕ findSheetIdByTitle() {}", e.getMessage());
+            log.info(String.format("ОШИБКА В МЕТОДЕ findSheetIdByTitle: %s", e.getMessage()));
         }
         return -1;
     }
@@ -95,6 +94,7 @@ public class GoogleSheetsService {
         int sheetId = generateSheetId();
         AddSheetRequest addSheetViewRequest = new AddSheetRequest()
                 .setProperties(new SheetProperties()
+                        .setIndex(0)
                         .setTitle(sheetTitle)
                         .setSheetId(sheetId)
                         .setGridProperties(new GridProperties()

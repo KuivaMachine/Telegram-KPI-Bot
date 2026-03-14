@@ -2,23 +2,25 @@ package org.example.kpitelegrambot.googlesheets;
 
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
-import org.example.kpitelegrambot.postgresql.entity.PackerStatistic;
-import org.example.kpitelegrambot.postgresql.entity.PrinterStatistic;
-import org.example.kpitelegrambot.postgresql.entity.SheetId;
-import org.example.kpitelegrambot.postgresql.service.DateService;
-import org.example.kpitelegrambot.postgresql.service.SheetIdService;
+import org.example.kpitelegrambot.data.entity.PackerStatistic;
+import org.example.kpitelegrambot.data.entity.PrinterStatistic;
+import org.example.kpitelegrambot.data.entity.SheetId;
+import org.example.kpitelegrambot.data.service.DateService;
+import org.example.kpitelegrambot.data.service.LogService;
+import org.example.kpitelegrambot.data.service.SheetIdService;
 import org.springframework.stereotype.Component;
+
 import java.time.LocalDate;
 
-@Log4j2
-@RequiredArgsConstructor
 @Component
+@RequiredArgsConstructor
 public class StatisticHandler {
 
 
     private final SheetIdService sheetIdService;
     private final GoogleSheetsService googleSheetsService;
+    private final LogService log;
+
 
     public void processPrinterStatistic(PrinterStatistic printerStatistic) {
         String sheetName = googleSheetsService.getHeaderTitle(DateService.parseStringToLocalDate(printerStatistic.getDate(), "yyyy-MM-dd"));
@@ -56,3 +58,4 @@ public class StatisticHandler {
         }
     }
 }
+

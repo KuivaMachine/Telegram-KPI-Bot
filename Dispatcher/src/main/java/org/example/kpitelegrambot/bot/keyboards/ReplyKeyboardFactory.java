@@ -1,6 +1,6 @@
 package org.example.kpitelegrambot.bot.keyboards;
 
-import org.example.kpitelegrambot.data.ButtonLabels;
+import org.example.kpitelegrambot.bot.enums.ButtonLabels;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
