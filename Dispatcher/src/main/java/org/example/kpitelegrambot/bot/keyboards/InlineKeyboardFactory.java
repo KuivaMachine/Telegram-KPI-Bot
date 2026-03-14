@@ -1,9 +1,9 @@
 package org.example.kpitelegrambot.bot.keyboards;
 
-import org.example.kpitelegrambot.data.ButtonLabels;
-import org.example.kpitelegrambot.postgresql.data.DayNight;
-import org.example.kpitelegrambot.postgresql.entity.Employee;
-import org.example.kpitelegrambot.postgresql.service.DateService;
+import org.example.kpitelegrambot.bot.enums.ButtonLabels;
+import org.example.kpitelegrambot.bot.enums.DayNight;
+import org.example.kpitelegrambot.data.entity.Employee;
+import org.example.kpitelegrambot.data.service.DateService;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 

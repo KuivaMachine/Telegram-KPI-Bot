@@ -11,7 +11,7 @@
 #RUN ./gradlew clean bootJar
 
 # Финальный этап
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:21-jdk-jammy
 
 # Устанавливаем рабочую директорию
 WORKDIR /dispatcher

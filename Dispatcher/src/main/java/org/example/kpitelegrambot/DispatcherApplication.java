@@ -8,7 +8,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@Log4j2
 @SpringBootApplication
 @EnableScheduling
 @EnableConfigurationProperties({TelegramBotConfig.class})

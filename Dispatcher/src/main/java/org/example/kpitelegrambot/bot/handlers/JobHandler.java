@@ -1,7 +1,6 @@
 package org.example.kpitelegrambot.bot.handlers;
 
-import org.example.kpitelegrambot.bot.TelegramBot;
-import org.example.kpitelegrambot.postgresql.entity.Employee;
+import org.example.kpitelegrambot.data.entity.Employee;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 

@@ -1,20 +1,20 @@
 package org.example.kpitelegrambot.bot.handlers;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.example.kpitelegrambot.bot.keyboards.InlineKeyboardFactory;
 import org.example.kpitelegrambot.bot.keyboards.ReplyKeyboardFactory;
-import org.example.kpitelegrambot.data.AnswersList;
-import org.example.kpitelegrambot.data.ButtonLabels;
+import org.example.kpitelegrambot.bot.enums.AnswersList;
+import org.example.kpitelegrambot.bot.enums.ButtonLabels;
 import org.example.kpitelegrambot.googlesheets.StatisticHandler;
-import org.example.kpitelegrambot.postgresql.DAO.PostgreSQLController;
-import org.example.kpitelegrambot.postgresql.data.DayNight;
-import org.example.kpitelegrambot.postgresql.data.EmployeePost;
-import org.example.kpitelegrambot.postgresql.data.EmployeeStatus;
-import org.example.kpitelegrambot.postgresql.entity.Employee;
-import org.example.kpitelegrambot.postgresql.entity.PrinterStatistic;
-import org.example.kpitelegrambot.postgresql.service.DateService;
-import org.example.kpitelegrambot.postgresql.service.EmployeeService;
+import org.example.kpitelegrambot.data.service.StatisticService;
+import org.example.kpitelegrambot.bot.enums.DayNight;
+import org.example.kpitelegrambot.bot.enums.EmployeePost;
+import org.example.kpitelegrambot.bot.enums.EmployeeStatus;
+import org.example.kpitelegrambot.data.entity.Employee;
+import org.example.kpitelegrambot.data.entity.PrinterStatistic;
+import org.example.kpitelegrambot.data.service.DateService;
+import org.example.kpitelegrambot.data.service.EmployeeService;
+import org.example.kpitelegrambot.data.service.LogService;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -25,14 +25,15 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Обработчик событий от callback кнопок inline-клавиатуры
  */
-@Log4j2
+
 @Component
 @RequiredArgsConstructor
 public class CallbackQueryHandler implements Handler {
 
     private final EmployeeService employeeService;
-    private final PostgreSQLController postgres;
+    private final StatisticService postgres;
     private final StatisticHandler statisticHandler;
+    private final LogService log;
 
     /**
      * Основной обработчик события.
@@ -106,7 +107,7 @@ public class CallbackQueryHandler implements Handler {
     private SendMessage deleteEmployee(String callback, SendMessage sendMessage) {
         String username = callback.substring(24);
         employeeService.dismissEmployeeByUsername(username, LocalDate.now());
-        log.info("СОТРУДНИК {} УВОЛЕН", username);
+        log.info(String.format("СОТРУДНИК %s УВОЛЕН", username));
         sendMessage.setText("Сотрудник уволен");
         return sendMessage;
     }
@@ -172,7 +173,7 @@ public class CallbackQueryHandler implements Handler {
             sendMessage.setText(String.format("Я все записал!\n%s", postgres.getNicePhraseToPrinter(Integer.parseInt(addedStat.getPrints_num()))));
             CompletableFuture.runAsync(()->statisticHandler.processPrinterStatistic(addedStat))
                     .exceptionally(exception->{
-                        log.error("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ДОБАВЛЕНИЯ СТАТИСТИКИ ПЕЧАТНИКА В GOOGLE ТАБЛИЦУ - {}", exception.getMessage());
+                        log.error(String.format("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ДОБАВЛЕНИЯ СТАТИСТИКИ ПЕЧАТНИКА В GOOGLE ТАБЛИЦУ - %s", exception.getMessage()));
                         return null;
                     });
         }else{
@@ -194,10 +195,10 @@ public class CallbackQueryHandler implements Handler {
         currentEmployee.setJob(EmployeePost.PRINTER);
         currentEmployee.setStatus(EmployeeStatus.SAVED);
         employeeService.save(currentEmployee);
-        log.info("ДОБАВЛЕН НОВЫЙ ПЕЧАТНИК - ({})", currentEmployee);
+        log.info(String.format("ДОБАВЛЕН НОВЫЙ ПЕЧАТНИК - (%s)", currentEmployee));
         CompletableFuture.runAsync(statisticHandler::processUpdateTable)
                 .exceptionally(exception->{
-                    log.error("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ОБНОВЛЕНИЯ ТАБЛИЦЫ GOOGLE ПРИ ДОБАВЛЕНИИ НОВОГО ПЕЧАТНИКА- {}", exception.getMessage());
+                    log.error(String.format("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ОБНОВЛЕНИЯ ТАБЛИЦЫ GOOGLE ПРИ ДОБАВЛЕНИИ НОВОГО ПЕЧАТНИКА - %s", exception.getMessage()));
                     return null;
                 });
         sendMessage.setText("""
@@ -218,10 +219,10 @@ public class CallbackQueryHandler implements Handler {
         currentEmployee.setJob(EmployeePost.PACKER);
         currentEmployee.setStatus(EmployeeStatus.SAVED);
         employeeService.save(currentEmployee);
-        log.info("ДОБАВЛЕН НОВЫЙ СБОРЩИК - ({})", currentEmployee);
+        log.info(String.format("ДОБАВЛЕН НОВЫЙ СБОРЩИК - (%s)", currentEmployee));
         CompletableFuture.runAsync(statisticHandler::processUpdateTable)
                 .exceptionally(exception->{
-                    log.error("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ОБНОВЛЕНИЯ ТАБЛИЦЫ GOOGLE ПРИ ДОБАВЛЕНИИ НОВОГО СБОРЩИКА - {}", exception.getMessage());
+                    log.error(String.format("ПРОИЗОШЛА ОШИБКА ВО ВРЕМЯ ОБНОВЛЕНИЯ ТАБЛИЦЫ GOOGLE ПРИ ДОБАВЛЕНИИ НОВОГО СБОРЩИКА - %s", exception.getMessage()));
                     return null;
                 });
         sendMessage.setText("""

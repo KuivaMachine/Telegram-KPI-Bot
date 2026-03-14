@@ -1,48 +1,45 @@
 package org.example.kpitelegrambot.bot.configuration;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
 
-import java.io.*;
-import java.nio.file.Files;
-import java.util.Properties;
+import java.util.List;
 
 /**
  * Сервис для импорта настроек админа (включить/выключить ежедневное оповещение)
  */
 @Configuration
+@RequiredArgsConstructor
 public class SettingsManager {
 
-    private final Properties props = new Properties();
-    private final File configFile = new File("./admin.properties");
+    private final JdbcTemplate jdbcTemplate;
 
 
     /**
-     * Читает и возвращает настройку разрешения уведомлений (admin_notification.enabled)
+     * Читает и возвращает настройку разрешения уведомлений (admin_notification_enabled)
      * @return true, если разрешено
      */
     public boolean isNotificationEnabled() {
-        try (InputStream input = new FileInputStream(configFile)) {
-            props.load(input);
-            return Boolean.parseBoolean(
-                    props.getProperty("admin_notification.enabled", "false")
-            );
-        } catch (IOException e) {
+        try {
+            List<String> result = jdbcTemplate.queryForList("SELECT value FROM settings WHERE sys_name = 'admin_notification_enabled'", String.class);
+            if (!result.isEmpty()) {
+                return Boolean.parseBoolean(result.getFirst());
+            } else {
+                return false;
+            }
+        } catch (Exception e) {
             return false;
         }
     }
 
 
     /**
-     * Устанавливает настройку разрешения уведомлений (admin_notification.enabled)
+     * Устанавливает настройку разрешения уведомлений (admin_notification_enabled)
      * @param value разрешено/запрещено
      */
     public void setNotificationEnabled(boolean value) {
-        props.setProperty("admin_notification.enabled", String.valueOf(value));
-        try (OutputStream output = Files.newOutputStream(configFile.toPath())) {
-            props.store(output, "Updated by bot command");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        jdbcTemplate.update("UPDATE settings SET value = ? WHERE sys_name = 'admin_notification_enabled'", String.valueOf(value));
     }
 
 }
